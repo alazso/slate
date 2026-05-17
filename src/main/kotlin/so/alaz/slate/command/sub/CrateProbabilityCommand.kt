@@ -150,7 +150,7 @@ object CrateProbabilityCommand {
                             CommandMessages.raw(context.source.sender, "<red>${result.message ?: "Failed to create crate."}</red>")
                             return@executes 0
                         }
-                        CommandMessages.raw(context.source.sender, "<green>Created crate '${crateId}'.</green>")
+                        CommandMessages.chat(context.source.sender, MessageKeys.CRATE_CREATED, mapOf("crate" to crateId))
                         Command.SINGLE_SUCCESS
                     },
             )
@@ -183,7 +183,11 @@ object CrateProbabilityCommand {
                                     CommandMessages.raw(context.source.sender, "<red>Cloned file but reload failed for '${targetId}'.</red>")
                                     return@executes 0
                                 }
-                                CommandMessages.raw(context.source.sender, "<green>Cloned '${sourceId}' -> '${targetId}'.</green>")
+                                CommandMessages.chat(
+                                    context.source.sender,
+                                    MessageKeys.CRATE_CLONED,
+                                    mapOf("source" to sourceId, "target" to targetId),
+                                )
                                 Command.SINGLE_SUCCESS
                             },
                     ),
@@ -218,7 +222,11 @@ object CrateProbabilityCommand {
                                     CommandMessages.raw(context.source.sender, "<red>Renamed file but reload failed for '${newId}'.</red>")
                                     return@executes 0
                                 }
-                                CommandMessages.raw(context.source.sender, "<green>Renamed '${oldId}' -> '${newId}'.</green>")
+                                CommandMessages.chat(
+                                    context.source.sender,
+                                    MessageKeys.CRATE_RENAMED,
+                                    mapOf("old" to oldId, "new" to newId),
+                                )
                                 Command.SINGLE_SUCCESS
                             },
                     ),
@@ -232,7 +240,7 @@ object CrateProbabilityCommand {
                 Commands.argument("crate", StringArgumentType.word())
                     .suggests { context, builder -> CommandSuggestions.suggestCrateIds(context.source, builder) }
                     .executes { context ->
-                        CommandMessages.raw(context.source.sender, "<red>Add --confirm to delete crate file.</red>")
+                        CommandMessages.chat(context.source.sender, MessageKeys.CRATE_CONFIRM_REQUIRED)
                         0
                     }
                     .then(
@@ -241,7 +249,7 @@ object CrateProbabilityCommand {
                             .executes { context ->
                                 val flags = CommandFlagUtil.tokenize(StringArgumentType.getString(context, "flags"))
                                 if (!CommandFlagUtil.hasFlag(flags, "--confirm")) {
-                                    CommandMessages.raw(context.source.sender, "<red>Add --confirm to delete crate file.</red>")
+                                    CommandMessages.chat(context.source.sender, MessageKeys.CRATE_CONFIRM_REQUIRED)
                                     return@executes 0
                                 }
                                 val crateId = StringArgumentType.getString(context, "crate")
@@ -255,7 +263,7 @@ object CrateProbabilityCommand {
                                     return@executes 0
                                 }
                                 SlateAPI.crateManager()?.reload()
-                                CommandMessages.raw(context.source.sender, "<green>Deleted crate '${crateId}'.</green>")
+                                CommandMessages.chat(context.source.sender, MessageKeys.CRATE_DELETED, mapOf("crate" to crateId))
                                 Command.SINGLE_SUCCESS
                             },
                     ),
@@ -280,7 +288,11 @@ object CrateProbabilityCommand {
                                     return@executes 0
                                 }
                                 val value = loaded.second.get(path)
-                                CommandMessages.raw(context.source.sender, "<gray>${path} = ${renderYamlValue(value)}</gray>")
+                                CommandMessages.chat(
+                                    context.source.sender,
+                                    MessageKeys.CRATE_PATH_VALUE,
+                                    mapOf("path" to path, "value" to renderYamlValue(value)),
+                                )
                                 Command.SINGLE_SUCCESS
                             },
                     ),
@@ -324,7 +336,11 @@ object CrateProbabilityCommand {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
                                             return@executes 0
                                         }
-                                        CommandMessages.raw(context.source.sender, "<green>Updated ${path} on '${crateId}'.</green>")
+                                        CommandMessages.chat(
+                                            context.source.sender,
+                                            MessageKeys.CRATE_PATH_SET,
+                                            mapOf("path" to path, "crate" to crateId),
+                                        )
                                         Command.SINGLE_SUCCESS
                                     },
                             ),
@@ -366,7 +382,11 @@ object CrateProbabilityCommand {
                                     CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
                                     return@executes 0
                                 }
-                                CommandMessages.raw(context.source.sender, "<green>Unset ${path} on '${crateId}'.</green>")
+                                CommandMessages.chat(
+                                    context.source.sender,
+                                    MessageKeys.CRATE_PATH_UNSET,
+                                    mapOf("path" to path, "crate" to crateId),
+                                )
                                 Command.SINGLE_SUCCESS
                             },
                     ),
@@ -571,7 +591,11 @@ object CrateProbabilityCommand {
             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
             return 0
         }
-        CommandMessages.raw(context.source.sender, "<green>Added ${added} rewards to '${crateId}' from inventory.</green>")
+        CommandMessages.chat(
+            context.source.sender,
+            MessageKeys.CRATE_ADDREWARD_BULK_ADDED,
+            mapOf("count" to added, "crate" to crateId),
+        )
         return Command.SINGLE_SUCCESS
     }
 
@@ -641,7 +665,11 @@ object CrateProbabilityCommand {
             CommandMessages.raw(source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
             return 0
         }
-        CommandMessages.raw(source.sender, "<green>Added reward '${rewardId}' to '${crateId}'.</green>")
+        CommandMessages.chat(
+            source.sender,
+            MessageKeys.CRATE_ADDREWARD_ADDED,
+            mapOf("reward" to rewardId, "crate" to crateId),
+        )
         return Command.SINGLE_SUCCESS
     }
 

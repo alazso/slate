@@ -141,6 +141,16 @@ messages:
       sim_cap: "<yellow>Rolls capped at {max} to keep performance safe.</yellow>"
       sim_done: "<green>Simulation complete for '{crate}' ({rolls} rolls).</green>"
       sim_line: "<gray>{line}</gray>"
+      created: "<green>Created crate '{crate}'.</green>"
+      cloned: "<green>Cloned crate '{source}' -> '{target}'.</green>"
+      renamed: "<green>Renamed crate '{old}' -> '{new}'.</green>"
+      deleted: "<green>Deleted crate '{crate}'.</green>"
+      confirm_required: "<red>Add --confirm to continue.</red>"
+      path_value: "<gray>{path} = {value}</gray>"
+      path_set: "<green>Updated {path} on '{crate}'.</green>"
+      path_unset: "<green>Unset {path} on '{crate}'.</green>"
+      addreward_added: "<green>Added reward '{reward}' to '{crate}'.</green>"
+      addreward_bulk_added: "<green>Added {count} rewards to '{crate}' from inventory.</green>"
 
     reward:
       weight_only: "<red>You can only change reward weight in weighted mode.</red>"
