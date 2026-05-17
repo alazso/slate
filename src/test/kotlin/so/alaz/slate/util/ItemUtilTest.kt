@@ -5,12 +5,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.util.function.Consumer
 import org.bukkit.NamespacedKey
+import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import so.alaz.slate.crate.PrizeItem
 
@@ -54,5 +56,16 @@ class ItemUtilTest {
                 "rare",
             )
         }
+    }
+
+    @Test
+    fun `serialized itemstack round trips`() {
+        val original = ItemStack(Material.DIAMOND, 3)
+        val encoded = ItemUtil.serializeItemStack(original)
+        assertNotNull(encoded)
+        val decoded = ItemUtil.deserializeItemStack(encoded!!)
+        assertNotNull(decoded)
+        assertEquals(original.type, decoded!!.type)
+        assertEquals(3, decoded.amount)
     }
 }

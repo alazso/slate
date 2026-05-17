@@ -227,4 +227,19 @@ class ConfigValidatorTest {
         assertFalse(result.isValid)
         assertTrue(result.errors.any { it.keyPath == "animation.template" })
     }
+
+    @Test
+    fun `serialized reward item map is accepted`() {
+        val file = createTempFile(suffix = ".yml").toFile()
+        val yaml = YamlConfiguration()
+        yaml.set("name", "Demo")
+        yaml.set("selection.mode", "weighted")
+        yaml.set("selection.structure", "flat")
+        yaml.set("key.material", "TRIPWIRE_HOOK")
+        yaml.set("prizes.p1.weight", 1)
+        yaml.set("prizes.p1.items", listOf(mapOf("serialized" to "dGVzdA==")))
+
+        val result = validator.validate(file, yaml)
+        assertTrue(result.isValid)
+    }
 }
