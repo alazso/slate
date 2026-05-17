@@ -555,6 +555,7 @@ object CrateProbabilityCommand {
             CommandMessages.raw(context.source.sender, "<red>${mutability.warning ?: "This crate cannot be edited."}</red>")
             return 0
         }
+        validateRewardInputs(context.source, crate, tier, value)?.let { return it }
         val loaded = ProbabilityCommandSupport.loadCrateFile(crateId)
         if (loaded == null) {
             CommandMessages.raw(context.source.sender, "<red>Crate file for '${crateId}' is missing.</red>")
@@ -638,6 +639,7 @@ object CrateProbabilityCommand {
             CommandMessages.raw(source.sender, "<red>${mutability.warning ?: "This crate cannot be edited."}</red>")
             return 0
         }
+        validateRewardInputs(source, crate, tier, value)?.let { return it }
         val loaded = ProbabilityCommandSupport.loadCrateFile(crateId)
         if (loaded == null) {
             CommandMessages.raw(source.sender, "<red>Crate file for '${crateId}' is missing.</red>")
@@ -713,6 +715,31 @@ object CrateProbabilityCommand {
         yaml.set("prizes.${rewardId}.name", rewardId)
         yaml.set("prizes.${rewardId}.items", listOf(mapOf("serialized" to serialized, "amount" to stack.amount)))
         return true
+    }
+
+    private fun validateRewardInputs(
+        source: CommandSourceStack,
+        crate: CrateDefinition,
+        tier: String?,
+        value: Double?,
+    ): Int? {
+        if (crate.selection.structure == SelectionStructure.TIERS && tier.isNullOrBlank()) {
+            CommandMessages.raw(source.sender, "<red>Tier is required for tiered crates. Use: tier <tier-id>.</red>")
+            return 0
+        }
+        if (!tier.isNullOrBlank() && crate.selection.structure == SelectionStructure.TIERS && !crate.tiers.containsKey(tier)) {
+            CommandMessages.chat(source.sender, MessageKeys.COMMON_UNKNOWN_TIER, mapOf("tier" to tier))
+            return 0
+        }
+        if (crate.selection.mode == SelectionMode.PERCENT && value == null) {
+            CommandMessages.raw(source.sender, "<red>Percent-mode crates require: value <chance>.</red>")
+            return 0
+        }
+        if (crate.selection.mode == SelectionMode.WEIGHTED && value != null && value.toInt() <= 0) {
+            CommandMessages.raw(source.sender, "<red>Weight must be greater than 0.</red>")
+            return 0
+        }
+        return null
     }
 
     private fun uniqueRewardId(existing: Set<String>, base: String): String {
