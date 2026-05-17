@@ -56,6 +56,18 @@ Aggregate access accepted by this namespace:
 | `/sla crate chances <crate>` | `slate.crate.chances` | Shows mode/structure, configured values, effective chances, empty chance. |
 | `/sla crate validate <crate>` | `slate.crate.validate` | Validates crate file and reports up to 10 errors. |
 | `/sla crate simulate <crate> <rolls>` | `slate.crate.simulate` | Async simulation; capped to 250,000 rolls. |
+| `/sla crate list` | `slate.crate.list` | Lists loaded crates for admins. |
+| `/sla crate info <crate>` | `slate.crate.info` | Shows crate mode/structure and reward counts. |
+| `/sla crate create <crate>` | `slate.crate.create` | Creates a minimal valid crate file and reloads. |
+| `/sla crate clone <source> <target>` | `slate.crate.clone` | Clones a crate file under a new id. |
+| `/sla crate rename <old> <new>` | `slate.crate.rename` | Renames the crate file and reloads runtime crates. |
+| `/sla crate delete <crate> --confirm` | `slate.crate.delete` | Deletes a crate file; `remove` alias also available. |
+| `/sla crate get <crate> <path>` | `slate.crate.get` | Reads a YAML field by path from crate file. |
+| `/sla crate set <crate> <path> <value>` | `slate.crate.set` | Writes a YAML field by path and reloads. |
+| `/sla crate unset <crate> <path>` | `slate.crate.unset` | Removes a YAML field by path and reloads. |
+| `/sla crate addreward <crate> hand <reward> ...` | `slate.crate.addreward` | Adds current held item as a reward using serialized item data. |
+| `/sla crate addreward <crate> inventory <prefix> ...` | `slate.crate.addreward` | Adds each non-empty inventory slot as separate rewards. |
+| `/sla crate addreward <crate> item <reward> <minecraft-item>` | `slate.crate.addreward` | Parses item strings (including component syntax) into rewards. |
 
 ### Probability: Reward Commands
 
@@ -214,6 +226,16 @@ This is the current permission key set defined in `SlatePermissions`.
 | `slate.crate.chances` |
 | `slate.crate.validate` |
 | `slate.crate.simulate` |
+| `slate.crate.list` |
+| `slate.crate.info` |
+| `slate.crate.create` |
+| `slate.crate.clone` |
+| `slate.crate.rename` |
+| `slate.crate.delete` |
+| `slate.crate.get` |
+| `slate.crate.set` |
+| `slate.crate.unset` |
+| `slate.crate.addreward` |
 | `slate.reward.weight` |
 | `slate.reward.chance` |
 | `slate.reward.tier` |

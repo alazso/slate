@@ -86,6 +86,24 @@ class CommandPermissionsTest {
         assertNotNull(teleport.getChild("crate"))
     }
 
+    @Test
+    fun `crate edit commands require crate edit permissions`() {
+        val root = CrateProbabilityCommand.node()
+        val create = root.getChild("create")
+        val set = root.getChild("set")
+        val addReward = root.getChild("addreward")
+        assertNotNull(create)
+        assertNotNull(set)
+        assertNotNull(addReward)
+
+        assertTrue(create.requirement.test(sourceWith("slate.crate.create")))
+        assertFalse(create.requirement.test(sourceWith()))
+        assertTrue(set.requirement.test(sourceWith("slate.crate.set")))
+        assertFalse(set.requirement.test(sourceWith()))
+        assertTrue(addReward.requirement.test(sourceWith("slate.crate.addreward")))
+        assertFalse(addReward.requirement.test(sourceWith()))
+    }
+
     private fun sourceWith(vararg permissions: String): CommandSourceStack {
         val sender = mockk<CommandSender>()
         every { sender.hasPermission(any<String>()) } answers { permissions.contains(firstArg<String>()) }
