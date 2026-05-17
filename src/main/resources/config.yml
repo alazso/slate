@@ -1,0 +1,35 @@
+config-version: 1
+debug: false
+language: en
+broadcastPrefix: "<gold>[Slate]</gold> "
+crateScanRecursive: false
+maxBulkOpenAmount: 10
+gui:
+  click-cooldown-ms: 100
+  animation-timeout-seconds: 30
+  animation-close-safeguard: complete-on-close # complete-on-close | prevent-close-until-complete
+  close-on-damage: true
+  menu:
+    rows: 4
+    border-material: GRAY_STAINED_GLASS_PANE
+    crate-slots: "10-16,19-25"
+
+database:
+  type: sqlite
+  host: localhost
+  port: 5432
+  name: slate
+  user: slate
+  password: ""
+  poolSize: 10
+  connectionTimeoutMs: 30000
+
+cluster:
+  redis:
+    enabled: false
+    host: localhost
+    port: 6379
+    password: ""
+    database: 0
+    lockTtlMs: 5000
+    acquireTimeoutMs: 5000

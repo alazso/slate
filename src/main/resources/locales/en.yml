@@ -1,0 +1,199 @@
+messages:
+  chat:
+    common:
+      not_initialized: "<red>Slate is still starting up. Please try again in a moment.</red>"
+      only_players: "<red>Only players can run {command}.</red>"
+      unknown_crate: "<red>I couldn't find a crate named '{crate}'.</red>"
+      unknown_reward: "<red>I couldn't find a reward named '{reward}'.</red>"
+      unknown_tier: "<red>I couldn't find a tier named '{tier}'.</red>"
+      not_implemented: "<yellow>{feature} isn't available yet.</yellow>"
+
+    help:
+      value: "<gray>Use /sla help [page] to view available commands.</gray>"
+      header: "<gold>Slate Help</gold> <dark_gray>-</dark_gray> <gray>Page {page}/{totalPages}</gray>"
+      line: "<yellow>{command}</yellow> <dark_gray>-</dark_gray> <gray>{description}</gray>"
+      footer: "<gray>Tip: use /sla help {nextPage} for the next page.</gray>"
+      empty: "<yellow>You don't have access to any help entries.</yellow>"
+      page_invalid: "<red>Page {page} doesn't exist. Showing page {resolvedPage} instead.</red>"
+
+    version:
+      value: "<green>Slate version:</green> <gray>{version}</gray>"
+
+    health:
+      summary: "<green>Slate is healthy.</green> <gray>Loaded crates: {crates} | Storage: connected | Debug: {debug}</gray>"
+
+    list:
+      empty: "<yellow>No crates are loaded right now.</yellow>"
+      loaded: "<green>Available crates ({count}):</green> <gray>{list}</gray>"
+
+    preview:
+      forbidden: "<red>You don't have permission to preview '{crate}'.</red>"
+      header: "<green>{name}</green> <gray>(id: {crate})</gray> <dark_gray>|</dark_gray> <gray>Rewards: {prizes} | Keys needed: {requiredKeys} | Cooldown: {cooldown} | Mode: {mode} | Layout: {structure}</gray>"
+      empty: "<gray>Empty roll chance: {empty}</gray>"
+      tiers: "<gray>Tier list: {tiers}</gray>"
+      summary: "<gray>{summary}</gray>"
+      prize_line: "<gray>{prize}</gray> <dark_gray>-</dark_gray> <gray>{chance} ({ratio}){tierPart}</gray>"
+
+    open:
+      attempt: "<gray>Opening <yellow>{crate}</yellow> x<yellow>{amount}</yellow>...</gray>"
+      forbidden: "<red>You don't have permission to open '{crate}'.</red>"
+      max_bulk: "<red>You can open up to {max} at once.</red>"
+      result: "<green>Done!</green> <gray>{opened}/{attempted} opened from '{crate}'{suffix}</gray>"
+      failed_reason: "<red>Couldn't open crate: {reason}</red>"
+      stopped_suffix: " <dark_gray>-</dark_gray> <red>Stopped:</red> {reason}"
+      failed_reasons:
+        no_key: "<yellow>You need the correct key for this crate.</yellow>"
+        insufficient_keys: "<yellow>This crate requires {required} key(s), but you only have {available}.</yellow>"
+        on_cooldown: "<yellow>This crate is still on cooldown.</yellow>"
+        max_pulls_reached: "<yellow>You have reached the open limit for this crate.</yellow>"
+        not_allowed_world: "<yellow>You can't open this crate in this world.</yellow>"
+        crate_disabled: "<yellow>This crate is currently disabled.</yellow>"
+        crate_archived: "<yellow>This crate is archived and cannot be opened.</yellow>"
+        crate_out_of_season: "<yellow>This crate is currently out of season.</yellow>"
+        missing_permission: "<yellow>You are missing permission to open this crate.</yellow>"
+        region_restricted: "<yellow>You can't open this crate from this region.</yellow>"
+        worldguard_unavailable: "<yellow>Region checks are enabled, but WorldGuard is unavailable.</yellow>"
+        cancelled_by_event: "<yellow>The crate opening was cancelled.</yellow>"
+        delivery_failed: "<yellow>The reward could not be delivered. It has been queued for recovery.</yellow>"
+
+    claim:
+      processing: "<gray>Checking your pending rewards...</gray>"
+      result: "<green>Claim complete.</green> <gray>Total: {total} | Delivered: {delivered} | Remaining: {remaining}</gray>"
+
+    anchor:
+      set_success: "<green>Anchor set.</green> <gray>Crate: {crate} at {x}, {y}, {z}</gray>"
+      remove_success: "<green>Anchor removed successfully.</green>"
+      remove_none: "<yellow>There isn't an anchor at that location.</yellow>"
+      list_empty: "<yellow>No anchors have been set yet.</yellow>"
+      list: "<green>Anchors ({count}):</green> <gray>{text}</gray>"
+      look_at_block: "<red>Look at a nearby block (within 6 blocks).</red>"
+      look_at_anchored: "<red>Look at an anchored block (within 6 blocks).</red>"
+      break_denied: "<red>This block is a crate anchor for '{crate}' and can't be broken.</red>"
+      unknown_target: "<red>This anchor points to unknown crate '{crate}'.</red>"
+      tp_not_found: "<yellow>No anchor found for '{crate}'.</yellow>"
+      tp_world_unloaded: "<red>Anchor world is not loaded:</red> <gray>{world}</gray>"
+      tp_success: "<green>Teleported to anchor:</green> <gray>{crate} at {x}, {y}, {z}</gray>"
+      refresh_complete: "<green>Anchor cache refreshed.</green> <gray>Anchors: {count}</gray>"
+
+    crates:
+      locate_none: "<yellow>No crate anchors found in this world.</yellow>"
+      locate_nearest: "<green>Nearest anchor:</green> <gray>{crate} at {x}, {y}, {z}</gray>"
+      history_empty: "<yellow>No crate history found.</yellow>"
+      history_line: "<gray>{crate}: {prize} ({keyType})</gray>"
+      pity_line: "<gray>{crate} pity: {count}</gray>"
+      pity_empty: "<yellow>No crates loaded.</yellow>"
+
+    keys:
+      bad_mode: "<red>Please choose only one key mode: --virtual or --physical.</red>"
+      player_not_found: "<red>Couldn't find that player (online, cached, or UUID).</red>"
+      give_success: "<green>{message}</green>{suffix}"
+      take_success: "<green>{message}</green>{suffix}"
+      set_success: "<green>{message}</green>{suffix}"
+      clear_success: "<green>Virtual keys cleared.</green> <gray>Player: {player} | Target: {target}</gray>{suffix}"
+      balance_single: "<green>{player}</green> <gray>has {amount} virtual key(s) for '{crate}'.</gray>"
+      balance_total: "<green>{player}</green> <gray>has {total} total virtual key(s)</gray> <dark_gray>|</dark_gray> <gray>{breakdown}</gray>"
+      operation_failed: "<red>Key {operation} failed.</red> <gray>{error}</gray>"
+      clear_confirm_required: "<red>Safety check: add --confirm to run this command.</red>"
+      virtual_received: "<green>Received {amount} virtual key(s) for {crate}.</green>"
+
+    player_keys:
+      total: "<green>Your virtual keys: {total}</green> <dark_gray>|</dark_gray> <gray>{body}</gray>"
+      single: "<green>{crate}</green> <gray>virtual keys: {amount}</gray>"
+
+    reload:
+      complete: "<green>Reload complete.</green> <gray>Updated: {updated} | Retained: {retained} | Failed: {failed} | Removed: {removed} | Active crates: {activeCrates} | {configState}</gray> <yellow>{failedFiles}</yellow>"
+
+    admin_pity:
+      unknown_player: "<red>Unknown player '{player}'.</red>"
+      get_result: "<green>Pity:</green> <gray>{player} {crate} = {count}</gray>"
+      reset_result: "<green>Pity reset:</green> <gray>{player} {crate} = 0</gray>"
+
+    backup:
+      sqlite_only: "<yellow>Backup command currently supports sqlite mode only.</yellow>"
+      db_missing: "<yellow>No sqlite database file found yet.</yellow>"
+      created: "<green>Backup created:</green> <gray>{file}</gray>"
+
+    restore:
+      sqlite_only: "<yellow>Restore command currently supports sqlite mode only.</yellow>"
+      backup_missing: "<red>Backup file not found: {file}</red>"
+      complete: "<green>Database restored from</green> <gray>{file}</gray> <yellow>(restart plugin/server to ensure clean handles)</yellow>"
+
+    migrate:
+      dry_run: "<green>Migration dry-run:</green> <gray>Migrations are applied automatically on startup. Current schema includes open operation ledger tables (V004).</gray>"
+
+    audit:
+      loading: "<gray>Loading audit operations...</gray>"
+      empty: "<yellow>No open operations found.</yellow>"
+      header: "<green>Recent operations ({count}):</green>"
+      row: "<gray>{operationId} crate={crate} state={state} prize={prize} err={error}</gray>"
+
+    session:
+      summary: "<green>Session:</green> <gray>pluginScopeActive=true, operations are coordinated by local+cluster locks.</gray>"
+
+    crate:
+      chances_header: "<green>Chance table for '{crate}'</green> <gray>| Mode: {mode} | Layout: {structure} | Total: {total}</gray>"
+      chances_empty: "<gray>Unassigned/empty chance: {empty}</gray>"
+      chances_line: "<gray>{prize}</gray> <dark_gray>-</dark_gray> <gray>Base: {configured}{tierPart} | Final: {effective}</gray>"
+      validate_ok: "<green>Great news - '{crate}' passed validation.</green>"
+      validate_errors: "<red>'{crate}' has {count} validation issue(s).</red>"
+      validate_error_line: "<gray>{path}</gray> <dark_gray>-</dark_gray> <gray>{message}</gray>"
+      sim_start: "<gray>Running simulation for '{crate}' ({rolls} rolls)...</gray>"
+      sim_cap: "<yellow>Rolls capped at {max} to keep performance safe.</yellow>"
+      sim_done: "<green>Simulation complete for '{crate}' ({rolls} rolls).</green>"
+      sim_line: "<gray>{line}</gray>"
+
+    reward:
+      weight_only: "<red>You can only change reward weight in weighted mode.</red>"
+      chance_only: "<red>You can only change reward chance in flat percent mode.</red>"
+      tier_only: "<red>You can only change reward tier when crate layout is set to tiers.</red>"
+      weight_set: "<green>Updated.</green> <gray>Reward '{reward}' now has weight {weight} in '{crate}'.</gray>"
+      chance_set: "<green>Updated.</green> <gray>Reward '{reward}' now has chance {chance} in '{crate}'.</gray>"
+      tier_set: "<green>Updated.</green> <gray>Reward '{reward}' moved to tier '{tier}' in '{crate}'.</gray>"
+
+    tier:
+      not_tiered: "<red>Crate '{crate}' is not using tiered rewards.</red>"
+      list: "<green>Tiers for '{crate}':</green> <gray>{list}</gray>"
+      created: "<green>Tier '{tier}' created in '{crate}'.</green>"
+      deleted: "<green>Tier '{tier}' deleted from '{crate}'.</green>"
+      renamed: "<green>Tier renamed:</green> <gray>{oldTier} -> {newTier} (crate: {crate})</gray>"
+      weight_set: "<green>Tier weight updated.</green> <gray>{tier} = {weight} (crate: {crate})</gray>"
+      info: "<green>Tier '{tier}'</green> <gray>Name: {name} | Weight: {weight} | Chance: {chance} | Rewards: {rewards}</gray>"
+      rewards_header: "<green>Rewards in tier '{tier}':</green>"
+      reward_line: "<gray>{prize}</gray> <dark_gray>-</dark_gray> <gray>Local: {local} | Effective: {effective}</gray>"
+      rewards_empty: "<yellow>There are no rewards in tier '{tier}' yet.</yellow>"
+      already_exists: "<red>Tier '{tier}' already exists.</red>"
+      delete_referenced: "<red>Can't delete tier '{tier}' yet.</red> <gray>Still used by: {rewards}</gray>"
+
+    debug:
+      helditem_empty: "<yellow>Hold an item first.</yellow>"
+      helditem_header: "<green>Held item:</green> <gray>{type} x{amount}</gray>"
+      key_header: "<green>Key Check (main hand)</green>"
+      key_empty: "<yellow>Hold an item in your main hand first.</yellow>"
+      key_line: "<gray>{line}</gray>"
+      key_match: "<green>Looks good. This item should open '{crate}' as a physical key.</green>"
+      key_mismatch: "<red>This item is not currently recognized as a usable physical key.</red> <gray>Expected crate: {crate}</gray>"
+      database_summary: "<green>Database:</green> <gray>type={type} pool={pool} timeoutMs={timeoutMs}</gray>"
+      scheduler_summary: "<green>Scheduler:</green> <gray>platform={platform} mainDispatcher={dispatcher}</gray>"
+      integrations_summary: "<green>Integrations:</green> <gray>{states}</gray>"
+      dump_header: "<green>Loaded crates:</green> <gray>{count}</gray>"
+      dump_line: "<gray>{crate} rewards={rewards} mode={mode}</gray>"
+      crates_header: "<green>Crates:</green> <gray>loaded={count}</gray>"
+      crates_line: "<gray>{crate}: prizes={prizes} tiers={tiers} mode={mode}</gray>"
+      crate_header: "<green>Crate:</green> <gray>{crate} ({name})</gray>"
+      crate_core: "<gray>requiredKeys={requiredKeys} maxPulls={maxPulls} cooldown={cooldown} worlds={worlds}</gray>"
+      crate_selection: "<gray>selection={selection} allowEmpty={allowEmpty} emptyWeight={emptyWeight}</gray>"
+      crate_key: "<gray>key={provider} material={material} modelData={modelData}</gray>"
+      crate_tiers: "<gray>tiers={tiers}</gray>"
+      crate_prizes: "<gray>prizes={prizes}</gray>"
+      player_header: "<green>Player:</green> <gray>{player} uuid={uuid}</gray>"
+      player_location: "<gray>world={world} x={x} y={y} z={z}</gray>"
+      player_stats: "<gray>gameMode={gameMode} op={op} health={health}/{maxHealth}</gray>"
+      player_permissions: "<gray>permissions open={open} claim={claim} keys={keys}</gray>"
+      eligibility_checking: "<gray>Checking eligibility for '{crate}'...</gray>"
+      eligibility_header: "<green>Eligibility:</green> <gray>crate={crate}</gray>"
+      eligibility_permission: "<gray>permission={permission} worldAllowed={worldAllowed}</gray>"
+      eligibility_keys: "<gray>virtualKeys={virtualKeys} hasVirtual={hasVirtual} hasPhysical={hasPhysical}</gray>"
+      eligibility_opens: "<gray>opens={opens} maxPulls={maxPulls} pity={pity} cooldown={cooldown}</gray>"
+
+  hotbar: {}
+  title: {}
