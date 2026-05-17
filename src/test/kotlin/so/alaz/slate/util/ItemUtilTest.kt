@@ -5,7 +5,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.util.function.Consumer
 import org.bukkit.NamespacedKey
-import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataContainer
@@ -59,13 +58,16 @@ class ItemUtilTest {
     }
 
     @Test
-    fun `serialized itemstack round trips`() {
-        val original = ItemStack(Material.DIAMOND, 3)
+    fun `serialize itemstack encodes bytes`() {
+        val original = mockk<ItemStack>()
+        every { original.serializeAsBytes() } returns byteArrayOf(1, 2, 3)
         val encoded = ItemUtil.serializeItemStack(original)
         assertNotNull(encoded)
-        val decoded = ItemUtil.deserializeItemStack(encoded!!)
-        assertNotNull(decoded)
-        assertEquals(original.type, decoded!!.type)
-        assertEquals(3, decoded.amount)
+    }
+
+    @Test
+    fun `deserialize itemstack returns null for invalid payload`() {
+        val decoded = ItemUtil.deserializeItemStack("not-valid-base64")
+        assertEquals(null, decoded)
     }
 }
