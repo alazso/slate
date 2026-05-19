@@ -74,7 +74,7 @@ class GuiBuilder internal constructor(
         }
 
         fun close(item: ItemStack = ItemStack(Material.BARRIER)) {
-            slot = StaticSlot(item) { it.player.closeInventory() }
+            slot = StaticSlot(item) { it.session.closeRequested = true }
         }
     }
 }

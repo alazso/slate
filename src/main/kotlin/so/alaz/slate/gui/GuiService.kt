@@ -102,7 +102,11 @@ class GuiService(
         shuttingDown.set(true)
         sessionsByPlayer.values.toList().forEach { session ->
             val player = plugin.server.getPlayer(session.playerId) ?: return@forEach
-            scheduler.runGlobal {
+            if (plugin.isEnabled) {
+                scheduler.runGlobal {
+                    player.closeInventory()
+                }
+            } else {
                 player.closeInventory()
             }
         }
@@ -143,6 +147,16 @@ class GuiService(
                     clickType = event.click,
                 )
                 session.gui.onClick(context, session, slot)
+                if (session.closeRequested) {
+                    session.closeRequested = false
+                    scheduler.runForPlayerEntity(player) {
+                        player.closeInventory()
+                    }
+                    return@runCatching
+                }
+                if (session.gui is AnimationGui) {
+                    return@runCatching
+                }
                 session.gui.refresh(player, scheduler, session.inventory)
             }.onFailure {
                 plugin.logger.warning("GUI click handling failed for ${player.name}: ${it.message}")
@@ -235,12 +249,26 @@ class GuiService(
     }
 
     private fun templateFor(config: CrateAnimationConfig): AnimationTemplate = when (config.template.lowercase()) {
-        "slot-machine" -> SlotMachineAnimation(config.durationTicks, config.tickInterval)
-        "agency-pick" -> AgencyPickAnimation(config.durationTicks, config.tickInterval)
-        else -> {
-            val spedUpDuration = (config.durationTicks / 2).coerceAtLeast(1)
-            CsgoAnimation(spedUpDuration, config.tickInterval)
-        }
+        "slot-machine" -> SlotMachineAnimation(
+            totalTicks = config.durationTicks,
+            tickInterval = config.tickInterval,
+            spinSpeedMultiplier = config.spinSpeedMultiplier,
+            revealTailTicks = config.revealTailTicks,
+        )
+
+        "agency-pick" -> AgencyPickAnimation(
+            totalTicks = config.durationTicks,
+            tickInterval = config.tickInterval,
+            spinSpeedMultiplier = config.spinSpeedMultiplier,
+            revealTailTicks = config.revealTailTicks,
+        )
+
+        else -> CsgoAnimation(
+            totalTicks = config.durationTicks,
+            tickInterval = config.tickInterval,
+            spinSpeedMultiplier = config.spinSpeedMultiplier,
+            revealTailTicks = config.revealTailTicks,
+        )
     }
 }
 

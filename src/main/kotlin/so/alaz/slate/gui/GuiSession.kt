@@ -12,6 +12,7 @@ data class GuiSession(
     val inventory: Inventory,
     val openedAtMs: Long = System.currentTimeMillis(),
     var currentPage: Int = 0,
+    @Volatile var closeRequested: Boolean = false,
 ) {
     private val lastClickMs = AtomicLong(0L)
 

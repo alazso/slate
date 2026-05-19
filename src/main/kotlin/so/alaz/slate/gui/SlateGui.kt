@@ -30,7 +30,7 @@ abstract class SlateGui(
         }
         holder.inventoryRef = inventory
         val session = GuiSession(playerId = player.uniqueId, gui = this, inventory = inventory)
-        fillInventory(player, inventory)
+        fillInventory(player, inventory, scheduler)
         runGlobal(scheduler) { player.openInventory(inventory) }
         onAfterOpen(player, session)
         return session
@@ -73,6 +73,15 @@ abstract class SlateGui(
 
     protected fun slots(): Array<GuiSlot?> = slotMap.copyOf()
 
+    protected fun fillEmptySlots(slotFactory: (index: Int) -> GuiSlot?) {
+        val snapshot = slots()
+        snapshot.forEachIndexed { index, slot ->
+            if (slot == null) {
+                this.slot(index, slotFactory(index))
+            }
+        }
+    }
+
     suspend fun renderSlot(player: Player, index: Int): org.bukkit.inventory.ItemStack? {
         if (index !in 0 until size) return null
         return slotMap[index]?.render(player)
@@ -104,14 +113,33 @@ abstract class SlateGui(
         inventory: Inventory,
         scheduler: PlatformScheduler? = null,
     ) {
-        slots().forEachIndexed { index, guiSlot ->
-            val item = guiSlot?.render(player)
-            if (scheduler == null) {
-                inventory.setItem(index, item)
-            } else {
-                runGlobal(scheduler) { inventory.setItem(index, item) }
+        val renderedItems = slots().map { guiSlot -> guiSlot?.render(player) }
+        if (scheduler == null) {
+            renderedItems.forEachIndexed { index, item ->
+                val existing = inventory.getItem(index)
+                if (!itemsEquivalent(existing, item)) {
+                    inventory.setItem(index, item)
+                }
+            }
+        } else {
+            runGlobal(scheduler) {
+                renderedItems.forEachIndexed { index, item ->
+                    val existing = inventory.getItem(index)
+                    if (!itemsEquivalent(existing, item)) {
+                        inventory.setItem(index, item)
+                    }
+                }
             }
         }
+    }
+
+    private fun itemsEquivalent(
+        existing: org.bukkit.inventory.ItemStack?,
+        rendered: org.bukkit.inventory.ItemStack?,
+    ): Boolean {
+        if (existing == null && rendered == null) return true
+        if (existing == null || rendered == null) return false
+        return existing.amount == rendered.amount && existing.isSimilar(rendered)
     }
 
     private suspend fun <T> runGlobal(scheduler: PlatformScheduler, block: () -> T): T =
