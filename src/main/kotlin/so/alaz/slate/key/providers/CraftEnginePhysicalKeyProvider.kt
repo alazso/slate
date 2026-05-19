@@ -2,6 +2,7 @@ package so.alaz.slate.key.providers
 
 import org.bukkit.inventory.ItemStack
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.crate.CratePlaceholderResolver
 import so.alaz.slate.crate.KeyProvider
 import so.alaz.slate.item.CraftEngineItemProvider
 import so.alaz.slate.item.ItemBuildRequest
@@ -20,8 +21,8 @@ object CraftEnginePhysicalKeyProvider : PhysicalKeyProvider {
                 itemId = crate.keyDefinition.providerItemId,
                 amount = amount,
                 overlay = ItemOverlay(
-                    name = crate.keyDefinition.name.takeIf { it.isNotBlank() },
-                    lore = crate.keyDefinition.lore.takeIf { it.isNotEmpty() },
+                    name = CratePlaceholderResolver.render(crate.keyDefinition.name, crate).takeIf { it.isNotBlank() },
+                    lore = CratePlaceholderResolver.renderLore(crate.keyDefinition.lore, crate).takeIf { it.isNotEmpty() },
                     glint = crate.keyDefinition.glowing,
                     customModelData = crate.keyDefinition.customModelData,
                     itemModel = crate.keyDefinition.customItemId,

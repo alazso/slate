@@ -8,6 +8,7 @@ object PhysicalKeyProviderRegistry {
         KeyProvider.Vanilla to VanillaPhysicalKeyProvider,
         KeyProvider.Nexo to NexoPhysicalKeyProvider,
         KeyProvider.CraftEngine to CraftEnginePhysicalKeyProvider,
+        KeyProvider.ItemsAdder to ItemsAdderPhysicalKeyProvider,
     )
 
     fun providerFor(crate: CrateDefinition): PhysicalKeyProvider =

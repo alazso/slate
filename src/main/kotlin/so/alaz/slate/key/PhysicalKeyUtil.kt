@@ -6,6 +6,7 @@ import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 import so.alaz.slate.SlateKeys
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.crate.CratePlaceholderResolver
 import so.alaz.slate.crate.KeyProvider
 import so.alaz.slate.util.ComponentUtil
 import so.alaz.slate.util.ItemUtil
@@ -38,10 +39,10 @@ object PhysicalKeyUtil {
 
         if (crate.keyDefinition.provider == KeyProvider.Vanilla) {
             if (item.type != crate.keyDefinition.material) return false
-            val expectedName = ComponentUtil.parse(crate.keyDefinition.name)
+            val expectedName = ComponentUtil.parse(CratePlaceholderResolver.render(crate.keyDefinition.name, crate))
             if (meta.displayName() != expectedName) return false
 
-            val expectedLore = crate.keyDefinition.lore.map(ComponentUtil::parse)
+            val expectedLore = CratePlaceholderResolver.renderLore(crate.keyDefinition.lore, crate).map(ComponentUtil::parse)
             if ((meta.lore() ?: emptyList()) != expectedLore) return false
 
             val actualModelFloats = readCustomModelData(item)
@@ -54,8 +55,18 @@ object PhysicalKeyUtil {
             val expectedItemModel = crate.keyDefinition.customItemId?.trim().orEmpty().ifBlank { null }
             if (expectedItemModel != null && getCustomItemId(item, meta) != expectedItemModel) return false
             if (crate.keyDefinition.customModelData.isNotEmpty() && !matchesModelData(readCustomModelData(item), crate.keyDefinition.customModelData)) return false
-            if (crate.keyDefinition.name.isNotBlank() && meta.displayName() != ComponentUtil.parse(crate.keyDefinition.name)) return false
-            if (crate.keyDefinition.lore.isNotEmpty() && (meta.lore() ?: emptyList()) != crate.keyDefinition.lore.map(ComponentUtil::parse)) return false
+            if (
+                crate.keyDefinition.name.isNotBlank() &&
+                meta.displayName() != ComponentUtil.parse(CratePlaceholderResolver.render(crate.keyDefinition.name, crate))
+            ) {
+                return false
+            }
+            if (
+                crate.keyDefinition.lore.isNotEmpty() &&
+                (meta.lore() ?: emptyList()) != CratePlaceholderResolver.renderLore(crate.keyDefinition.lore, crate).map(ComponentUtil::parse)
+            ) {
+                return false
+            }
         }
 
         return true
@@ -66,7 +77,7 @@ object PhysicalKeyUtil {
             val pdc = meta.persistentDataContainer
             pdc.set(SlateKeys.KEY_IS_SLATE_KEY, PersistentDataType.BYTE, 1)
             pdc.set(SlateKeys.KEY_CRATE_ID, PersistentDataType.STRING, crate.id)
-            pdc.set(SlateKeys.KEY_PROVIDER_TYPE, PersistentDataType.STRING, crate.keyDefinition.provider.name.lowercase())
+            pdc.set(SlateKeys.KEY_PROVIDER_TYPE, PersistentDataType.STRING, crate.keyDefinition.provider.providerId)
             val providerItemId = crate.keyDefinition.providerItemId?.trim().orEmpty().ifBlank { null }
             if (providerItemId != null) {
                 pdc.set(SlateKeys.KEY_PROVIDER_ITEM_ID, PersistentDataType.STRING, providerItemId)
