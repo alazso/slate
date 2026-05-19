@@ -169,6 +169,7 @@ class AnimationCompatibilityTest {
     ) : AnimationTemplate {
         override val id: String = "recording"
         val ticks = mutableListOf<Int>()
+        override fun shouldRenderOnTick(tick: Int): Boolean = tick % tickInterval == 0
         override fun frame(tick: Int, prize: Prize, decoys: List<Prize>): AnimationFrame {
             ticks += tick
             return AnimationFrame(emptyMap())
@@ -177,19 +178,31 @@ class AnimationCompatibilityTest {
 
     private fun immediateScheduler(): PlatformScheduler {
         val scheduler = mockk<PlatformScheduler>()
-        every { scheduler.runGlobal(any()) } answers {
-            firstArg<() -> Unit>().invoke()
-            object : CancellableTask {
-                override fun cancel() {}
-                override val isCancelled: Boolean = false
+        every {
+            scheduler.runRepeatingForEntity(
+                entity = any(),
+                initialDelayTicks = any(),
+                periodTicks = any(),
+                retiredCallback = any(),
+                task = any(),
+            )
+        } answers {
+            val taskBlock = arg<() -> Unit>(4)
+            var cancelled = false
+            var runs = 0
+            val handle = object : CancellableTask {
+                override fun cancel() {
+                    cancelled = true
+                }
+
+                override val isCancelled: Boolean
+                    get() = cancelled
             }
-        }
-        every { scheduler.runGlobalDelayed(any(), any()) } answers {
-            secondArg<() -> Unit>().invoke()
-            object : CancellableTask {
-                override fun cancel() {}
-                override val isCancelled: Boolean = false
+            while (runs < 256 && !cancelled) {
+                taskBlock.invoke()
+                runs++
             }
+            handle
         }
         return scheduler
     }
