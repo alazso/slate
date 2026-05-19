@@ -28,7 +28,7 @@ Modern crate plugin foundation for Paper 26.1+.
 
 Build outputs:
 
-- `build/libs/slate-0.1.0-SNAPSHOT.jar` - shaded deployable plugin jar (includes runtime dependencies)
+- `build/libs/slate-0.5.0.jar` - shaded deployable plugin jar (includes runtime dependencies)
 
 ## Local server smoke tests
 
