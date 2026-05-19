@@ -4,7 +4,6 @@ import java.util.Optional
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
-import so.alaz.slate.util.ItemUtil
 
 data class ItemBuildRequest(
     val provider: String? = null,
@@ -30,6 +29,13 @@ interface ItemProvider {
     fun build(request: ItemBuildRequest): ItemStack?
 }
 
+/**
+ * Canonical item construction entrypoint.
+ *
+ * Runtime contract:
+ * - Gameplay delivery paths should call [build].
+ * - GUI/display visual-only paths should call [buildVisual] so they can fail over cleanly.
+ */
 object ItemFactory {
     fun build(request: ItemBuildRequest): ItemStack? {
         val stack = deserialize(request.serialized) ?: run {
@@ -37,16 +43,30 @@ object ItemFactory {
             provider.build(request)
         } ?: return null
         stack.amount = stack.amount.coerceAtLeast(1)
-        ItemUtil.applyItemOverlay(stack, request.overlay)
+        ItemOverlaySupport.applyItemOverlay(stack, request.overlay)
         return stack
     }
 
+    fun buildVisual(
+        request: ItemBuildRequest,
+        fallbackMaterial: Material = Material.CHEST,
+    ): ItemStack {
+        val visualRequest = request.copy(amount = 1)
+        return build(visualRequest) ?: ItemStack(fallbackMaterial)
+    }
+
+    fun canResolve(request: ItemBuildRequest): Boolean =
+        build(request.copy(amount = 1)) != null
+
     private fun deserialize(serialized: String?): ItemStack? {
         if (serialized.isNullOrBlank()) return null
-        return ItemUtil.deserializeItemStack(serialized)
+        return ItemStackCodec.deserialize(serialized)
     }
 }
 
+/**
+ * Provider registry shared by reward delivery, key minting, and visual item resolution.
+ */
 object ItemProviderRegistry {
     private val providers: Map<String, ItemProvider> = listOf(
         VanillaItemProvider,

@@ -13,26 +13,21 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import so.alaz.slate.crate.PrizeItem
+import so.alaz.slate.item.ItemOverlay
+import so.alaz.slate.item.ItemOverlaySupport
+import so.alaz.slate.item.ItemStackCodec
 
 class ItemUtilTest {
     @Test
     fun `applyCustomModelData skips empty list without touching data components`() {
         val item = mockk<ItemStack>(relaxed = true)
 
-        val result = ItemUtil.applyCustomModelData(item, emptyList())
+        val result = ItemOverlaySupport.applyCustomModelData(item, emptyList())
         assertSame(item, result)
     }
 
     @Test
-    fun `parsePrizeItem supports inline amount notation`() {
-        val parsed = ItemUtil.parsePrizeItem(PrizeItem(material = "DIAMOND*3", amount = 1))
-        assertEquals("DIAMOND", parsed?.first?.name)
-        assertEquals(3, parsed?.second)
-    }
-
-    @Test
-    fun `applyPrizeItemMetadata applies prize pdc overlay`() {
+    fun `applyItemOverlay applies pdc metadata`() {
         val item = mockk<ItemStack>(relaxed = true)
         val meta = mockk<ItemMeta>(relaxed = true)
         val pdc = mockk<PersistentDataContainer>(relaxed = true)
@@ -43,9 +38,9 @@ class ItemUtilTest {
             true
         }
 
-        ItemUtil.applyPrizeItemMetadata(
+        ItemOverlaySupport.applyItemOverlay(
             item,
-            PrizeItem(pdc = mapOf("minecraft:reward_id" to "rare")),
+            ItemOverlay(pdc = mapOf("minecraft:reward_id" to "rare")),
         )
 
         verify {
@@ -61,13 +56,13 @@ class ItemUtilTest {
     fun `serialize itemstack encodes bytes`() {
         val original = mockk<ItemStack>()
         every { original.serializeAsBytes() } returns byteArrayOf(1, 2, 3)
-        val encoded = ItemUtil.serializeItemStack(original)
+        val encoded = ItemStackCodec.serialize(original)
         assertNotNull(encoded)
     }
 
     @Test
     fun `deserialize itemstack returns null for invalid payload`() {
-        val decoded = ItemUtil.deserializeItemStack("not-valid-base64")
+        val decoded = ItemStackCodec.deserialize("not-valid-base64")
         assertEquals(null, decoded)
     }
 }
