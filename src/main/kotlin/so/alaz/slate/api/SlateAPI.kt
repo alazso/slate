@@ -10,10 +10,14 @@ import so.alaz.slate.crate.CrateDefinition
 import so.alaz.slate.crate.CrateEligibilityService
 import so.alaz.slate.crate.CrateManager
 import so.alaz.slate.display.DisplayService
+import so.alaz.slate.economy.SlateEconomyService
 import so.alaz.slate.gui.GuiService
 import so.alaz.slate.key.KeyService
 import so.alaz.slate.message.MessageService
 import so.alaz.slate.opening.OpenService
+import so.alaz.slate.player.ClaimService
+import so.alaz.slate.player.PlayerCrateQueryService
+import so.alaz.slate.scheduler.PlatformScheduler
 import so.alaz.slate.storage.StorageService
 
 object SlateAPI {
@@ -29,6 +33,9 @@ object SlateAPI {
     private var guiService: GuiService? = null
     private var pluginScope: CoroutineScope? = null
     private var messageService: MessageService? = null
+    private var economyService: SlateEconomyService? = null
+    private var claimService: ClaimService? = null
+    private var playerCrateQueryService: PlayerCrateQueryService? = null
 
     fun init(
         plugin: SlatePlugin,
@@ -43,6 +50,9 @@ object SlateAPI {
         guiService: GuiService,
         pluginScope: CoroutineScope,
         messageService: MessageService,
+        economyService: SlateEconomyService,
+        claimService: ClaimService,
+        playerCrateQueryService: PlayerCrateQueryService,
     ) {
         this.plugin = plugin
         this.configManager = configManager
@@ -56,6 +66,9 @@ object SlateAPI {
         this.guiService = guiService
         this.pluginScope = pluginScope
         this.messageService = messageService
+        this.economyService = economyService
+        this.claimService = claimService
+        this.playerCrateQueryService = playerCrateQueryService
     }
 
     fun isKey(item: ItemStack): Boolean = requireReady(keyService).isKey(item)
@@ -74,6 +87,10 @@ object SlateAPI {
     fun pluginScope(): CoroutineScope? = pluginScope
     fun plugin(): SlatePlugin? = plugin
     fun messageService(): MessageService? = messageService
+    fun economyService(): SlateEconomyService? = economyService
+    fun claimService(): ClaimService? = claimService
+    fun playerCrateQueryService(): PlayerCrateQueryService? = playerCrateQueryService
+    fun scheduler(): PlatformScheduler? = plugin?.platformScheduler
 
     private fun <T> requireReady(value: T?): T =
         value ?: throw IllegalStateException("Slate not enabled")

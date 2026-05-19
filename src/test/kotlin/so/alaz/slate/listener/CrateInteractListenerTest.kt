@@ -17,16 +17,21 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.Material
 import org.junit.jupiter.api.Test
 import so.alaz.slate.api.SlateAPI
+import so.alaz.slate.config.AnchorProtectionConfig
+import so.alaz.slate.config.PluginConfig
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.crate.CrateEligibilityService
+import so.alaz.slate.crate.CrateInteractionConfig
+import so.alaz.slate.crate.CrateLeftClickAction
 import so.alaz.slate.crate.CrateManager
 import so.alaz.slate.crate.CrateType
 import so.alaz.slate.crate.KeyDefinition
 import so.alaz.slate.crate.KeyProvider
 import so.alaz.slate.crate.anchor.AnchorService
 import so.alaz.slate.key.KeyService
-import so.alaz.slate.opening.OpenBatchResult
 import so.alaz.slate.opening.OpenService
 import org.bukkit.inventory.ItemStack
 import so.alaz.slate.crate.Prize
@@ -85,6 +90,81 @@ class CrateInteractListenerTest {
         listener.onBlockBreak(event)
 
         io.mockk.verify(exactly = 0) { event.isCancelled = true }
+    }
+
+    @Test
+    fun `admin break removes anchor automatically`() = runTest {
+        val keyService = mockk<KeyService>(relaxed = true)
+        val openService = mockk<OpenService>(relaxed = true)
+        val anchorService = mockk<AnchorService>(relaxed = true)
+        val listener = CrateInteractListener(this, keyService, openService, anchorService, immediateScheduler())
+
+        val world = mockk<World>()
+        every { world.key } returns NamespacedKey.minecraft("world")
+        val location = Location(world, 20.0, 64.0, 20.0)
+        val block = mockk<Block>()
+        every { block.location } returns location
+
+        val player = mockk<Player>(relaxed = true)
+        every { player.hasPermission("slate.admin.anchor.set") } returns true
+        every { player.hasPermission("slate.admin.anchor.remove") } returns false
+        val event = mockk<BlockBreakEvent>(relaxed = true)
+        every { event.block } returns block
+        every { event.player } returns player
+        every { anchorService.crateIdAtCached(location) } returns "demo"
+        coEvery { anchorService.removeAnchor(location) } returns true
+
+        listener.onBlockBreak(event)
+        kotlinx.coroutines.yield()
+
+        io.mockk.verify(exactly = 0) { event.isCancelled = true }
+        coVerify(exactly = 1) { anchorService.removeAnchor(location) }
+    }
+
+    @Test
+    fun `anchor break confirmation requires second attempt when enabled`() = runTest {
+        val keyService = mockk<KeyService>(relaxed = true)
+        val openService = mockk<OpenService>(relaxed = true)
+        val anchorService = mockk<AnchorService>(relaxed = true)
+        val listener = CrateInteractListener(
+            this,
+            keyService,
+            openService,
+            anchorService,
+            immediateScheduler(),
+            configProvider = {
+                PluginConfig(
+                    anchors = AnchorProtectionConfig(
+                        breakConfirmEnabled = true,
+                        breakConfirmWindowSeconds = 5L,
+                    ),
+                )
+            },
+        )
+
+        val world = mockk<World>()
+        every { world.key } returns NamespacedKey.minecraft("world")
+        val location = Location(world, 20.0, 64.0, 20.0)
+        val block = mockk<Block>()
+        every { block.location } returns location
+
+        val player = mockk<Player>(relaxed = true)
+        every { player.uniqueId } returns UUID.randomUUID()
+        every { player.hasPermission("slate.admin.anchor.set") } returns false
+        every { player.hasPermission("slate.admin.anchor.remove") } returns true
+        val event = mockk<BlockBreakEvent>(relaxed = true)
+        every { event.block } returns block
+        every { event.player } returns player
+        every { anchorService.crateIdAtCached(location) } returns "demo"
+        coEvery { anchorService.removeAnchor(location) } returns true
+
+        listener.onBlockBreak(event)
+        io.mockk.verify(exactly = 1) { event.isCancelled = true }
+        coVerify(exactly = 0) { anchorService.removeAnchor(location) }
+
+        listener.onBlockBreak(event)
+        kotlinx.coroutines.yield()
+        coVerify(exactly = 1) { anchorService.removeAnchor(location) }
     }
 
     @Test
@@ -200,6 +280,73 @@ class CrateInteractListenerTest {
         kotlinx.coroutines.yield()
 
         coVerify(exactly = 1) { openService.openFromInteraction(player, crate, item) }
+    }
+
+    @Test
+    fun `left click anchor does not open crate when preview action is configured`() = runTest {
+        val keyService = mockk<KeyService>(relaxed = true)
+        val openService = mockk<OpenService>(relaxed = true)
+        val anchorService = mockk<AnchorService>(relaxed = true)
+        val listener = CrateInteractListener(this, keyService, openService, anchorService, immediateScheduler())
+
+        val world = mockk<World>()
+        every { world.key } returns NamespacedKey.minecraft("world")
+        val location = Location(world, 10.0, 64.0, 10.0)
+        val block = mockk<Block>()
+        every { block.location } returns location
+
+        val player = mockk<Player>(relaxed = true)
+        every { player.uniqueId } returns UUID.randomUUID()
+        every { player.hasPermission("slate.player.preview") } returns true
+        every { player.hasPermission("slate.preview.demo") } returns true
+        val event = mockk<PlayerInteractEvent>(relaxed = true)
+        every { event.hand } returns EquipmentSlot.HAND
+        every { event.action } returns Action.LEFT_CLICK_BLOCK
+        every { event.clickedBlock } returns block
+        every { event.item } returns null
+        every { event.player } returns player
+
+        val crate = CrateDefinition(
+            id = "demo",
+            name = "Demo",
+            type = CrateType.Unknown,
+            interaction = CrateInteractionConfig(leftClickAction = CrateLeftClickAction.OPEN_PREVIEW),
+            preview = so.alaz.slate.crate.CratePreviewConfig(enabled = true),
+            keyDefinition = KeyDefinition("Key", emptyList(), Material.TRIPWIRE_HOOK, emptyList(), null, KeyProvider.Vanilla, null, false),
+            prizes = listOf(
+                Prize(
+                    id = "p1",
+                    name = "Prize",
+                    tier = null,
+                    weight = 1,
+                    chance = null,
+                    broadcast = false,
+                    broadcastMessage = "",
+                    items = emptyList(),
+                    commands = emptyList(),
+                    messages = emptyList(),
+                ),
+            ),
+        )
+        val crateManager = mockk<CrateManager>(relaxed = true)
+        val crateEligibility = mockk<CrateEligibilityService>(relaxed = true)
+        mockkObject(SlateAPI)
+        every { SlateAPI.crateManager() } returns crateManager
+        every { SlateAPI.crateEligibilityService() } returns crateEligibility
+        every { SlateAPI.guiService() } returns null
+        every { crateManager.byId("demo") } returns crate
+        every { anchorService.crateIdAtCached(location) } returns "demo"
+        every { crateEligibility.canPreview(player, crate) } returns so.alaz.slate.crate.CrateOpenEligibility(true)
+
+        try {
+            listener.onInteract(event)
+            kotlinx.coroutines.yield()
+
+            io.mockk.verify(exactly = 1) { event.isCancelled = true }
+            coVerify(exactly = 0) { openService.openFromInteraction(player, crate, null) }
+        } finally {
+            unmockkObject(SlateAPI)
+        }
     }
 }
 

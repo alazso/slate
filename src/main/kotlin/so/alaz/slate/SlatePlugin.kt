@@ -3,14 +3,14 @@ package so.alaz.slate
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import java.io.File
 import java.time.Duration
 import java.net.URI
 import kotlin.time.Duration.Companion.seconds
+import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
 import redis.clients.jedis.JedisPooled
 import so.alaz.slate.api.SlateAPI
@@ -22,10 +22,16 @@ import so.alaz.slate.crate.CrateManager
 import so.alaz.slate.crate.WorldGuardRegionAccessService
 import so.alaz.slate.display.DisplayFactory
 import so.alaz.slate.display.DisplayService
+import so.alaz.slate.economy.EconomyProviderResolver
+import so.alaz.slate.economy.EconomyCurrencyFormatter
+import so.alaz.slate.economy.SlateEconomyService
 import so.alaz.slate.key.KeyServiceImpl
 import so.alaz.slate.listener.CrateInteractListener
+import so.alaz.slate.listener.DisplayLifecycleListener
 import so.alaz.slate.message.LocaleManager
 import so.alaz.slate.message.MessageService
+import so.alaz.slate.player.ClaimService
+import so.alaz.slate.player.PlayerCrateQueryService
 import so.alaz.slate.gui.GuiService
 import so.alaz.slate.opening.OpeningPipeline
 import so.alaz.slate.opening.OpenService
@@ -44,6 +50,8 @@ class SlatePlugin : JavaPlugin() {
     private val supervisorJob = SupervisorJob()
     val pluginScope: CoroutineScope = CoroutineScope(supervisorJob + Dispatchers.IO + CoroutineName("Slate"))
     lateinit var mainDispatcher: BukkitMainDispatcher
+        private set
+    lateinit var platformScheduler: PlatformScheduler
         private set
 
     lateinit var configManager: ConfigManager
@@ -68,15 +76,22 @@ class SlatePlugin : JavaPlugin() {
         private set
     lateinit var messageService: MessageService
         private set
+    lateinit var economyService: SlateEconomyService
+        private set
+    lateinit var claimService: ClaimService
+        private set
+    lateinit var playerCrateQueryService: PlayerCrateQueryService
+        private set
     private var redisClient: JedisPooled? = null
+    private var placeholderExpansionHandle: Any? = null
 
     override fun onLoad() {
         SlateKeys.init(this)
     }
 
     override fun onEnable() {
-        val scheduler = PlatformScheduler(this)
-        mainDispatcher = BukkitMainDispatcher(scheduler)
+        platformScheduler = PlatformScheduler(this)
+        mainDispatcher = BukkitMainDispatcher(platformScheduler)
         configManager = ConfigManager(this, ConfigValidator())
         localeManager = LocaleManager(this)
 
@@ -98,6 +113,25 @@ class SlatePlugin : JavaPlugin() {
                 storageService.initialize()
             }
         }
+        val activeEconomyProvider = EconomyProviderResolver(server, configManager.current.currency).resolve()
+        val currencyFormatter = EconomyCurrencyFormatter(configManager.current.currency.format)
+        economyService = SlateEconomyService(
+            activeProvider = activeEconomyProvider,
+            defaultProviderId = activeEconomyProvider.id,
+            defaultCurrencyId = configManager.current.currency.defaultCurrency,
+            formatter = currencyFormatter,
+        )
+        LogUtil.info(
+            "Economy provider selected: ${activeEconomyProvider.id} " +
+                "(available=${activeEconomyProvider.isAvailable()}, " +
+                "multiCurrency=${activeEconomyProvider.capabilities().supportsMultipleCurrencies})",
+        )
+        server.servicesManager.register(
+            SlateEconomyService::class.java,
+            economyService,
+            this,
+            ServicePriority.Normal,
+        )
 
         crateManager = CrateManager(this, ConfigValidator()) { configManager.current }
         crateEligibilityService = CrateEligibilityService(WorldGuardRegionAccessService())
@@ -125,24 +159,45 @@ class SlatePlugin : JavaPlugin() {
         } else {
             NoopClusterCoordinator
         }
-        val openingPipeline = OpeningPipeline(keyService, prizeEngine, pityTracker, storageService, scheduler, crateEligibilityService)
+        val openingPipeline = OpeningPipeline(
+            keyService,
+            prizeEngine,
+            pityTracker,
+            storageService,
+            platformScheduler,
+            crateEligibilityService,
+            economyService,
+        )
         openService = OpenService(crateManager, keyService, openingPipeline, clusterCoordinator)
         anchorService = AnchorService(storageService)
+        claimService = ClaimService(storageService, crateManager, platformScheduler)
+        playerCrateQueryService = PlayerCrateQueryService(
+            storage = storageService,
+            crateManager = crateManager,
+            keyService = keyService,
+            anchorService = anchorService,
+            claimService = claimService,
+        )
         runBlocking {
             withTimeout(10.seconds) {
                 anchorService.warmCache()
             }
         }
+        seedDefaultCrateIfEmpty()
 
         val reloadSummary = crateManager.load()
         LogUtil.info("Loaded ${reloadSummary.cratesLoaded} crates (${reloadSummary.cratesFailed} failed)")
-        displayService = DisplayService(scheduler, crateManager, anchorService, DisplayFactory(), pluginScope)
+        displayService = DisplayService(platformScheduler, crateManager, anchorService, DisplayFactory(), pluginScope)
         displayService.cleanupAllStaleDisplays()
         displayService.reloadDisplays()
-        guiService = GuiService(this, scheduler, pluginScope) { configManager.current }
+        guiService = GuiService(this, platformScheduler, pluginScope) { configManager.current }
         guiService.register()
         server.pluginManager.registerEvents(
-            CrateInteractListener(pluginScope, keyService, openService, anchorService, scheduler),
+            CrateInteractListener(pluginScope, keyService, openService, anchorService, platformScheduler) { configManager.current },
+            this,
+        )
+        server.pluginManager.registerEvents(
+            DisplayLifecycleListener(displayService),
             this,
         )
 
@@ -159,18 +214,24 @@ class SlatePlugin : JavaPlugin() {
             guiService,
             pluginScope,
             messageService,
+            economyService,
+            claimService,
+            playerCrateQueryService,
         )
+
+        registerPlaceholderExpansion()
     }
 
     override fun onDisable() {
+        unregisterPlaceholderExpansion()
         if (this::displayService.isInitialized) {
-            displayService.removeAllOwnedDisplays()
+            displayService.removeAllOwnedDisplaysImmediate()
         }
         if (this::guiService.isInitialized) {
             guiService.closeAll()
         }
         runCatching {
-            runBlocking(NonCancellable) {
+            runBlocking {
                 withTimeout(10.seconds) {
                     if (this@SlatePlugin::storageService.isInitialized) {
                         storageService.shutdown()
@@ -181,6 +242,59 @@ class SlatePlugin : JavaPlugin() {
         }.onFailure {
             LogUtil.error("Error during shutdown", it)
         }
-        supervisorJob.cancel()
+        runCatching {
+            supervisorJob.cancel()
+        }.onFailure {
+            LogUtil.warn("Coroutine scope cancellation warning: ${it.message}")
+        }
+    }
+
+    private fun seedDefaultCrateIfEmpty() {
+        val cratesDir = File(dataFolder, "crates").apply { mkdirs() }
+        val hasAnyCrateYaml = cratesDir.walkTopDown()
+            .any { it.isFile && it.extension.equals("yml", ignoreCase = true) }
+        if (hasAnyCrateYaml) return
+        saveResource("crates/astral.yml", false)
+        LogUtil.info("Seeded default crate: crates/astral.yml")
+    }
+
+    private fun registerPlaceholderExpansion() {
+        if (server.pluginManager.getPlugin("PlaceholderAPI") == null) {
+            LogUtil.info("PlaceholderAPI not detected; %slate_*% placeholders disabled")
+            return
+        }
+        val expansion = runCatching {
+            val expansionClass = Class.forName("so.alaz.slate.placeholder.SlatePlaceholderExpansion")
+            val constructor = expansionClass.getConstructor(SlatePlugin::class.java)
+            constructor.newInstance(this)
+        }.onFailure {
+            LogUtil.warn("PlaceholderAPI detected but Slate expansion class failed to load: ${it.message}")
+        }.getOrNull() ?: return
+
+        val registered = runCatching {
+            val registerMethod = expansion.javaClass.getMethod("register")
+            registerMethod.invoke(expansion) as? Boolean ?: false
+        }.onFailure {
+            LogUtil.warn("PlaceholderAPI detected but Slate expansion registration failed: ${it.message}")
+        }.getOrDefault(false)
+
+        if (!registered) {
+            LogUtil.warn("PlaceholderAPI detected but Slate expansion failed to register")
+            return
+        }
+
+        placeholderExpansionHandle = expansion
+        LogUtil.info("Registered PlaceholderAPI expansion: %slate_*%")
+    }
+
+    private fun unregisterPlaceholderExpansion() {
+        val expansion = placeholderExpansionHandle ?: return
+        runCatching {
+            val unregisterMethod = expansion.javaClass.getMethod("unregister")
+            unregisterMethod.invoke(expansion)
+        }.onFailure {
+            LogUtil.warn("Failed to unregister PlaceholderAPI expansion cleanly: ${it.message}")
+        }
+        placeholderExpansionHandle = null
     }
 }

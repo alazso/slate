@@ -24,12 +24,14 @@ import org.junit.jupiter.api.Test
 import so.alaz.slate.SlateKeys
 import so.alaz.slate.crate.CrateDefinition
 import so.alaz.slate.crate.CrateManager
+import so.alaz.slate.crate.CratePlaceholderResolver
 import so.alaz.slate.crate.KeyProvider
 import so.alaz.slate.crate.CrateType
 import so.alaz.slate.crate.KeyDefinition
 import so.alaz.slate.crate.Prize
 import so.alaz.slate.item.ItemBuildRequest
 import so.alaz.slate.item.ItemFactory
+import so.alaz.slate.key.providers.ItemsAdderPhysicalKeyProvider
 import so.alaz.slate.key.providers.NexoPhysicalKeyProvider
 import so.alaz.slate.scheduler.BukkitMainDispatcher
 import so.alaz.slate.scheduler.CancellableTask
@@ -127,6 +129,59 @@ class KeyServiceImplTest {
         }
     }
 
+    @Test
+    fun `itemsadder physical keys resolve through shared item factory`() {
+        val crate = strictCrate(provider = KeyProvider.ItemsAdder, providerItemId = "itemsadder:keys/strict_key")
+        val item = mockk<ItemStack>(relaxed = true)
+        val request = slot<ItemBuildRequest>()
+
+        mockkObject(ItemFactory)
+        try {
+            every { ItemFactory.build(capture(request)) } returns item
+
+            val minted = ItemsAdderPhysicalKeyProvider.mint(crate, 2)
+
+            assertEquals(item, minted)
+            assertEquals("itemsadder", request.captured.provider)
+            assertEquals("itemsadder:keys/strict_key", request.captured.itemId)
+            assertEquals(2, request.captured.amount)
+            assertEquals(true, request.captured.overlay.glint)
+        } finally {
+            unmockkObject(ItemFactory)
+        }
+    }
+
+    @Test
+    fun `physical key overlays resolve crate placeholders`() {
+        val crate = strictCrate(provider = KeyProvider.ItemsAdder, providerItemId = "itemsadder:keys/strict_key").copy(
+            name = "<gold>Astral Reliquary</gold>",
+            keyDefinition = strictCrate(provider = KeyProvider.ItemsAdder, providerItemId = "itemsadder:keys/strict_key").keyDefinition.copy(
+                name = "<yellow>{crate_name} Key</yellow>",
+                lore = listOf("<gray>Open {crate_name}</gray>"),
+            ),
+        )
+        val item = mockk<ItemStack>(relaxed = true)
+        val request = slot<ItemBuildRequest>()
+
+        mockkObject(ItemFactory)
+        try {
+            every { ItemFactory.build(capture(request)) } returns item
+
+            ItemsAdderPhysicalKeyProvider.mint(crate, 1)
+
+            assertEquals(
+                CratePlaceholderResolver.render(crate.keyDefinition.name, crate),
+                request.captured.overlay.name,
+            )
+            assertEquals(
+                CratePlaceholderResolver.renderLore(crate.keyDefinition.lore, crate),
+                request.captured.overlay.lore,
+            )
+        } finally {
+            unmockkObject(ItemFactory)
+        }
+    }
+
     private fun ensureSlateKeysInitialized() {
         val ready = runCatching { SlateKeys.KEY_CRATE_ID }.isSuccess
         if (!ready) {
@@ -144,13 +199,13 @@ class KeyServiceImplTest {
         val item = mockk<ItemStack>(relaxed = true)
         val meta = mockk<ItemMeta>(relaxed = true)
         val pdc = mockk<PersistentDataContainer>(relaxed = true)
-        val effectiveLore = lore ?: crate.keyDefinition.lore.map(ComponentUtil::parse)
+        val effectiveLore = lore ?: CratePlaceholderResolver.renderLore(crate.keyDefinition.lore, crate).map(ComponentUtil::parse)
 
         every { item.type } returns crate.keyDefinition.material
         every { item.amount } returns amount
         every { item.itemMeta } returns meta
         every { meta.persistentDataContainer } returns pdc
-        every { meta.displayName() } returns ComponentUtil.parse(crate.keyDefinition.name)
+        every { meta.displayName() } returns ComponentUtil.parse(CratePlaceholderResolver.render(crate.keyDefinition.name, crate))
         every { meta.lore() } returns effectiveLore
         every { meta.customModelData } returns crate.keyDefinition.customModelData.first().toInt()
 
