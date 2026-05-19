@@ -8,6 +8,8 @@ Modern crate plugin foundation for Paper 26.1+.
 - Open operation ledger persisted in SQL (`open_operations`, `open_operation_steps`) for retry-safe tracking.
 - SQL is authoritative state store; optional Redis lock coordination is available for multi-proxy contention control.
 - Reward items support adapter-based resolution (`vanilla`, `nexo`, `craftengine`, `oraxen`, `itemsadder`, `mmoitems`) with metadata/PDC overlays.
+- Physical key providers support `vanilla`, `nexo`, `craftengine`, and `itemsadder`.
+- Preview/menu/animation/display visuals now use provider-aware item resolution with deterministic fallback materials.
 - Crate lifecycle and eligibility checks support stateful crates (`active`, `disabled`, `hidden`, `archived`, `seasonal`), additive per-crate permissions, and optional WorldGuard-backed region constraints.
 - Inventory GUI framework is now built-in (menu, preview, animation templates, and editor scaffolding) using Folia-safe scheduler dispatch + coroutine suspend flows.
 
