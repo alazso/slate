@@ -6,3 +6,8 @@ pluginManagement {
 }
 
 rootProject.name = "slate"
+
+val siblingLedger = file("../ledger")
+if (siblingLedger.exists()) {
+    includeBuild("../ledger")
+}

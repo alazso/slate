@@ -17,6 +17,8 @@ version = "0.1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    maven("https://jitpack.io")
 }
 
 kotlin {
@@ -43,6 +45,19 @@ dependencies {
     implementation(libs.postgres)
     implementation(libs.bstats)
     implementation(libs.jedis)
+    compileOnly(libs.placeholderapi)
+    compileOnly(libs.vault.api) {
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
+    compileOnly(libs.ledger.api)
+    testCompileOnly(libs.vault.api) {
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
+    testCompileOnly(libs.ledger.api)
+    testRuntimeOnly(libs.vault.api) {
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
+    testRuntimeOnly(libs.ledger.api)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
@@ -67,6 +82,20 @@ paper {
     loader = null
     foliaSupported = true
     generateLibrariesJson = false
+    serverDependencies {
+        register("Ledger") {
+            load = net.minecrell.pluginyml.paper.PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
+        }
+        register("Vault") {
+            load = net.minecrell.pluginyml.paper.PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
+        }
+        register("PlaceholderAPI") {
+            load = net.minecrell.pluginyml.paper.PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
+        }
+    }
 }
 
 tasks {

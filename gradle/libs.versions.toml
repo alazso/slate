@@ -12,6 +12,9 @@ sqlite = "3.50.1.0"
 postgres = "42.7.4"
 bstats = "3.1.0"
 jedis = "5.2.0"
+placeholderapi = "2.11.6"
+vaultapi = "1.7"
+ledgerapi = "0.1.0-SNAPSHOT"
 junit = "5.11.4"
 mockk = "1.14.9"
 mockbukkit = "4.34.0"
@@ -28,6 +31,9 @@ sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 bstats = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
 jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
+placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
+vault-api = { module = "com.github.MilkBowl:VaultAPI", version.ref = "vaultapi" }
+ledger-api = { module = "so.alaz.ledger:ledger-api", version.ref = "ledgerapi" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
