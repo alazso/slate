@@ -216,6 +216,32 @@ class CrateManagerReloadTest {
     }
 
     @Test
+    fun `all bundled default crates are loadable`() {
+        val plugin = mockk<JavaPlugin>()
+        every { plugin.dataFolder } returns tempDir.toFile()
+        cratesDir.toFile().mkdirs()
+        bundledDefaultCrates.forEach { fileName ->
+            val resourcePath = "crates/$fileName"
+            val stream = checkNotNull(javaClass.classLoader.getResourceAsStream(resourcePath)) {
+                "Missing bundled crate resource: $resourcePath"
+            }
+            cratesDir.resolve(fileName).toFile().writeText(stream.reader().readText())
+        }
+
+        val manager = CrateManager(plugin, ConfigValidator()) { PluginConfig() }
+        val summary = manager.reload()
+
+        assertEquals(bundledDefaultCrates.size, summary.cratesLoaded)
+        assertEquals(0, summary.cratesFailed)
+        assertEquals("csgo", manager.byId("nebula_vault")?.animation?.template)
+        assertEquals("csgo", manager.byId("inferno_cache")?.animation?.template)
+        assertEquals("slot-machine", manager.byId("gilded_jackpot")?.animation?.template)
+        assertEquals("slot-machine", manager.byId("deepsea_slots")?.animation?.template)
+        assertEquals("agency-pick", manager.byId("shadow_contract")?.animation?.template)
+        assertEquals("agency-pick", manager.byId("verdant_choice")?.animation?.template)
+    }
+
+    @Test
     fun `crate display name placeholder uses configured name when filename and id differ`() {
         val plugin = mockk<JavaPlugin>()
         every { plugin.dataFolder } returns tempDir.toFile()
@@ -245,6 +271,15 @@ class CrateManagerReloadTest {
             crate?.copy(name = crate.id)?.let { DisplayFactory().renderCratePlaceholders(it, "{crate_name}") },
         )
     }
+
+    private val bundledDefaultCrates = listOf(
+        "nebula_vault.yml",
+        "inferno_cache.yml",
+        "gilded_jackpot.yml",
+        "deepsea_slots.yml",
+        "shadow_contract.yml",
+        "verdant_choice.yml",
+    )
 
     private fun validCrateYaml(): String = """
         name: Alpha

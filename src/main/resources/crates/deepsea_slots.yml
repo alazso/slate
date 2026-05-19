@@ -1,0 +1,278 @@
+# Slot-machine demo crate — ocean / treasure theme.
+id: deepsea_slots
+crate-version: 1
+state: active
+language: en
+name: <gradient:#0284c7:#2dd4bf><bold>Deepsea Slots</bold></gradient>
+requiredKeys: 2
+maxPulls: 220
+cooldown: 2s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.deepsea_slots.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: slot-machine
+  tick-interval: 1
+  duration-ticks: 88
+  spin-speed-multiplier: 1.0
+  reveal-tail-ticks: 10
+  sound-tick: BLOCK_BUBBLE_COLUMN_WHIRLPOOL_AMBIENT
+  sound-reveal: ENTITY_DOLPHIN_PLAY
+  skip-permission: slate.animation.skip
+  decoy-count: 20
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: LIGHT_BLUE_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#38bdf8:#5eead4><bold>Deepsea Slot Pearl</bold></gradient>
+  lore:
+    - <dark_gray>Salted pearl used at underwater casinos.</dark_gray>
+    - <gray>Spins the <aqua>Deepsea Slots</aqua> — <yellow>2</yellow> pearls per pull.</gray>
+    - ''
+    - <aqua>Right-click the anchored crate to spin.</aqua>
+  material: NAUTILUS_SHELL
+  customModelData:
+    - 26401
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 50
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: CONDUIT
+    height-offset: 2.0
+    scale: 0.65
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <aqua>Right-click to spin</aqua>
+    - <blue>Left-click to preview</blue>
+
+pity:
+  enabled: true
+  opensRequired: 38
+  guaranteedTier: legendary
+
+tiers:
+  common:
+    name: <gray>Driftwood</gray>
+    weight: 690
+  rare:
+    name: <aqua>Treasure Tide</aqua>
+    weight: 220
+  epic:
+    name: <dark_aqua>Abyssal Haul</dark_aqua>
+    weight: 70
+  legendary:
+    name: <gold>Neptune's Favor</gold>
+    weight: 20
+
+prizes:
+  kelp_tangle:
+    name: <green>Kelp Tangle</green>
+    tier: common
+    weight: 150
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: KELP
+        amount: 32
+      - material: SEAGRASS
+        amount: 24
+    messages:
+      - <green>The reels wash up soggy greens.</green>
+
+  sandcastle_kit:
+    name: <yellow>Sandcastle Kit</yellow>
+    tier: common
+    weight: 140
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: SAND
+        amount: 48
+      - material: SANDSTONE
+        amount: 24
+    messages:
+      - <yellow>Beach day supplies, courtesy of the ocean.</yellow>
+
+  prismarine_shards:
+    name: <aqua>Prismarine Shards</aqua>
+    tier: common
+    weight: 125
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: PRISMARINE_SHARD
+        amount: 24
+      - material: PRISMARINE_CRYSTALS
+        amount: 12
+    messages:
+      - <aqua>Monument leftovers clatter into your inventory.</aqua>
+
+  fishing_haul:
+    name: <gray>Fishing Haul</gray>
+    tier: common
+    weight: 110
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: COD
+        amount: 16
+      - material: SALMON
+        amount: 16
+      - material: TROPICAL_FISH
+        amount: 8
+    messages:
+      - <gray>Smells like low tide.</gray>
+
+  heart_of_the_tide:
+    name: <aqua>Heart of the Tide</aqua>
+    tier: rare
+    weight: 82
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: HEART_OF_THE_SEA
+        amount: 1
+      - material: NAUTILUS_SHELL
+        amount: 4
+    messages:
+      - <aqua>You could craft a conduit with this.</aqua>
+
+  trident_shard_bundle:
+    name: <yellow>Trident Shard Bundle</yellow>
+    tier: rare
+    weight: 68
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: PRISMARINE_SHARD
+        amount: 32
+      - material: TRIDENT
+        amount: 1
+        customModelData:
+          - 26420
+        pdc:
+          slate:demo_reward: rusty_trident
+    messages:
+      - <yellow>A waterlogged trident — channeling optional.</yellow>
+
+  sponge_diver:
+    name: <green>Sponge Diver Pack</green>
+    tier: rare
+    weight: 52
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: SPONGE
+        amount: 6
+      - material: TURTLE_HELMET
+        amount: 1
+    commands:
+      - effect give %player% minecraft:water_breathing 120 0 true
+    messages:
+      - <green>Ocean temples fear this bundle.</green>
+
+  drowned_treasure:
+    name: <dark_aqua>Drowned Treasure</dark_aqua>
+    tier: epic
+    weight: 26
+    broadcast: true
+    broadcastMessage: <aqua>%player%</aqua> <gray>surfaced</gray> <dark_aqua>Drowned Treasure</dark_aqua> <gray>from the slots!</gray>
+    items:
+      - material: TRIDENT
+        amount: 1
+      - material: COPPER_INGOT
+        amount: 24
+    commands:
+      - experience add %player% 1100 points
+    messages:
+      - <dark_aqua>Saltwater drips from legendary loot.</dark_aqua>
+
+  guardian_core:
+    name: <dark_aqua>Guardian Core</dark_aqua>
+    tier: epic
+    weight: 18
+    broadcast: true
+    broadcastMessage: <dark_aqua>%player%</dark_aqua> <gray>aligned a</gray> <aqua>Guardian Core</aqua> <gray>on Deepsea Slots!</gray>
+    items:
+      - material: PRISMARINE
+        amount: 32
+      - material: DARK_PRISMARINE
+        amount: 16
+      - material: SEA_LANTERN
+        amount: 8
+    messages:
+      - <dark_aqua>Bioluminescent light floods the GUI.</dark_aqua>
+
+  neptune_trident:
+    name: <gold><bold>Neptune's Trident</bold></gold>
+    tier: legendary
+    weight: 10
+    broadcast: true
+    broadcastMessage: <gold><bold>%player%</bold></gold> <aqua>won Neptune's Trident on the Deepsea Slots!</aqua>
+    items:
+      - material: TRIDENT
+        amount: 1
+        customModelData:
+          - 26460
+        pdc:
+          slate:demo_reward: neptune_trident
+          slate:rarity: legendary
+      - material: CONDUIT
+        amount: 1
+    commands:
+      - experience add %player% 3200 points
+    messages:
+      - <gold><bold>Legendary!</bold></gold> <aqua>The tides obey — for now.</aqua>
+
+  tidal_jackpot:
+    name: <gold>Tidal Jackpot</gold>
+    tier: legendary
+    weight: 5
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>cashed in the Tidal Jackpot on Deepsea Slots!</yellow>
+    commands:
+      - give %player% minecraft:heart_of_the_sea 2
+      - give %player% minecraft:diamond 12
+      - experience add %player% 5500 points
+    messages:
+      - <gold>Waves crash as coins pour out of the machine.</gold>

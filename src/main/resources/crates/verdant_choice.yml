@@ -1,0 +1,281 @@
+# Agency-pick demo crate — nature / druid grove theme.
+id: verdant_choice
+crate-version: 1
+state: active
+language: en
+name: <gradient:#15803d:#84cc16><bold>Verdant Choice</bold></gradient>
+requiredKeys: 1
+maxPulls: 350
+cooldown: 1s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.verdant_choice.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: agency-pick
+  tick-interval: 1
+  duration-ticks: 70
+  spin-speed-multiplier: 1.0
+  reveal-tail-ticks: 6
+  sound-tick: BLOCK_AZALEA_LEAVES_BREAK
+  sound-reveal: ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM
+  skip-permission: slate.animation.skip
+  decoy-count: 18
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: LIME_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#22c55e:#a3e635><bold>Verdant Choice Sprout</bold></gradient>
+  lore:
+    - <dark_gray>A living key grown from ancient oak.</dark_gray>
+    - <gray>The grove offers three paths — pick wisely.</gray>
+    - ''
+    - <green>Right-click the anchored crate to choose.</green>
+  material: OAK_SAPLING
+  customModelData:
+    - 26601
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 48
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: MOSS_BLOCK
+    height-offset: 1.8
+    scale: 0.9
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <green>Right-click to choose</green>
+    - <dark_green>Left-click to preview</dark_green>
+
+pity:
+  enabled: true
+  opensRequired: 42
+  guaranteedTier: legendary
+
+tiers:
+  common:
+    name: <gray>Undergrowth</gray>
+    weight: 690
+  rare:
+    name: <green>Canopy</green>
+    weight: 225
+  epic:
+    name: <dark_green>Ancient Root</dark_green>
+    weight: 68
+  legendary:
+    name: <gold>World Tree Gift</gold>
+    weight: 17
+
+prizes:
+  seed_satchel:
+    name: <gray>Seed Satchel</gray>
+    tier: common
+    weight: 158
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: WHEAT_SEEDS
+        amount: 32
+      - material: BEETROOT_SEEDS
+        amount: 16
+      - material: PUMPKIN_SEEDS
+        amount: 16
+    messages:
+      - <gray>The grove shares tomorrow's harvest.</gray>
+
+  moss_garden_box:
+    name: <green>Moss Garden Box</green>
+    tier: common
+    weight: 142
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: MOSS_BLOCK
+        amount: 24
+      - material: MOSS_CARPET
+        amount: 16
+    messages:
+      - <green>Soft ground for cozy builds.</green>
+
+  beekeeper_starter:
+    name: <yellow>Beekeeper Starter</yellow>
+    tier: common
+    weight: 128
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: HONEYCOMB
+        amount: 8
+      - material: HONEY_BOTTLE
+        amount: 4
+      - material: FLOWER_POT
+        amount: 4
+    messages:
+      - <yellow>Buzzing friends not included.</yellow>
+
+  mushroom_forager:
+    name: <dark_red>Mushroom Forager</dark_red>
+    tier: common
+    weight: 112
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: RED_MUSHROOM
+        amount: 16
+      - material: BROWN_MUSHROOM
+        amount: 16
+      - material: MUSHROOM_STEW
+        amount: 4
+    messages:
+      - <dark_red>Forest floor flavors.</dark_red>
+
+  grove_fertilizer:
+    name: <green>Grove Fertilizer</green>
+    tier: rare
+    weight: 86
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: BONE_MEAL
+        amount: 48
+      - material: COMPOSTER
+        amount: 2
+    commands:
+      - effect give %player% minecraft:saturation 30 0 true
+    messages:
+      - <green>Everything grows a little faster.</green>
+
+  cherry_blossom_bundle:
+    name: <light_purple>Cherry Blossom Bundle</light_purple>
+    tier: rare
+    weight: 72
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: CHERRY_SAPLING
+        amount: 8
+      - material: PINK_PETALS
+        amount: 24
+    messages:
+      - <light_purple>Spring arrives in your inventory.</light_purple>
+
+  sniffer_herbs:
+    name: <gold>Sniffer Herbs</gold>
+    tier: rare
+    weight: 56
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: TORCHFLOWER_SEEDS
+        amount: 4
+      - material: PITCHER_POD
+        amount: 4
+    messages:
+      - <gold>Prehistoric plants for modern gardeners.</gold>
+
+  druid_staff:
+    name: <dark_green>Druid Staff</dark_green>
+    tier: epic
+    weight: 30
+    broadcast: true
+    broadcastMessage: <green>%player%</green> <gray>was chosen by the</gray> <dark_green>Druid Staff</dark_green><gray>.</gray>
+    items:
+      - material: STICK
+        amount: 1
+        customModelData:
+          - 26630
+        pdc:
+          slate:demo_reward: druid_staff
+      - material: VINE
+        amount: 16
+    commands:
+      - effect give %player% minecraft:regeneration 60 1 true
+    messages:
+      - <dark_green>Leaves sprout along the wood grain.</dark_green>
+
+  living_armor_trim:
+    name: <green>Living Armor Trim</green>
+    tier: epic
+    weight: 22
+    broadcast: true
+    broadcastMessage: <green>%player%</green> <gray>unearthed a</gray> <dark_green>Living Armor Trim</dark_green><gray>.</gray>
+    items:
+      - material: WILD_ARMOR_TRIM_SMITHING_TEMPLATE
+        amount: 1
+      - material: EMERALD
+        amount: 16
+    messages:
+      - <green>Nature and smithing tables agree for once.</green>
+
+  world_tree_gift:
+    name: <gold><bold>World Tree Gift</bold></gold>
+    tier: legendary
+    weight: 10
+    broadcast: true
+    broadcastMessage: <gold><bold>%player%</bold></gold> <green>received the World Tree Gift from the Verdant Choice!</green>
+    items:
+      - material: OAK_SAPLING
+        amount: 1
+        customModelData:
+          - 26660
+        pdc:
+          slate:demo_reward: world_tree_sapling
+          slate:rarity: legendary
+      - material: GOLDEN_APPLE
+        amount: 4
+    commands:
+      - experience add %player% 3000 points
+    messages:
+      - <gold><bold>Legendary!</bold></gold> <green>The grove crowns your choice.</green>
+
+  bloom_blessing:
+    name: <gold>Bloom Blessing</gold>
+    tier: legendary
+    weight: 5
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>invoked the Bloom Blessing!</yellow>
+    commands:
+      - give %player% minecraft:azalea 16
+      - give %player% minecraft:flowering_azalea 16
+      - experience add %player% 6500 points
+      - effect give %player% minecraft:hero_of_the_village 120 0 true
+    messages:
+      - <gold>Flowers erupt around you — villagers smile.</gold>

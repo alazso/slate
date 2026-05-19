@@ -1,0 +1,276 @@
+# CSGO-scroll demo crate — nether / blaze theme.
+id: inferno_cache
+crate-version: 1
+state: active
+language: en
+name: <gradient:#dc2626:#fbbf24><bold>Inferno Cache</bold></gradient>
+requiredKeys: 3
+maxPulls: 180
+cooldown: 3s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+  - minecraft:the_nether
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.inferno_cache.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: csgo
+  tick-interval: 1
+  duration-ticks: 85
+  spin-speed-multiplier: 0.95
+  reveal-tail-ticks: 7
+  sound-tick: BLOCK_FIRE_AMBIENT
+  sound-reveal: ENTITY_BLAZE_SHOOT
+  skip-permission: slate.animation.skip
+  decoy-count: 22
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: RED_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#ef4444:#f97316><bold>Inferno Cache Key</bold></gradient>
+  lore:
+    - <dark_gray>Still warm. Handle with fire resistance.</dark_gray>
+    - <gray>Opens the <red>Inferno Cache</red> — needs <yellow>3</yellow> keys.</gray>
+    - ''
+    - <gold>Right-click the anchored crate to open.</gold>
+  material: BLAZE_ROD
+  customModelData:
+    - 26201
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 52
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: MAGMA_BLOCK
+    height-offset: 1.85
+    scale: 0.9
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <red>Right-click to open</red>
+    - <gold>Left-click to preview</gold>
+
+pity:
+  enabled: true
+  opensRequired: 30
+  guaranteedTier: epic
+
+tiers:
+  common:
+    name: <gray>Ember</gray>
+    weight: 650
+  rare:
+    name: <gold>Flare</gold>
+    weight: 250
+  epic:
+    name: <red>Inferno</red>
+    weight: 85
+  legendary:
+    name: <dark_red><bold>Hellfire</bold></dark_red>
+    weight: 15
+
+prizes:
+  netherrack_bulk:
+    name: <gray>Netherrack Bulk</gray>
+    tier: common
+    weight: 155
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: NETHERRACK
+        amount: 64
+      - material: SOUL_SAND
+        amount: 32
+    messages:
+      - <gray>The Cache coughs up familiar nether stone.</gray>
+
+  blaze_fuel:
+    name: <gray>Blaze Fuel Bundle</gray>
+    tier: common
+    weight: 145
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: BLAZE_POWDER
+        amount: 16
+      - material: COAL
+        amount: 32
+    messages:
+      - <gray>Brewers and smelters will appreciate this.</gray>
+
+  quartz_strip:
+    name: <white>Quartz Strip Mine</white>
+    tier: common
+    weight: 130
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: QUARTZ
+        amount: 48
+      - material: QUARTZ_BLOCK
+        amount: 16
+    messages:
+      - <white>Bright blocks for builders who like heat.</white>
+
+  magma_cream_jar:
+    name: <red>Magma Cream Jar</red>
+    tier: common
+    weight: 115
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: MAGMA_CREAM
+        amount: 12
+      - material: SLIME_BALL
+        amount: 8
+    messages:
+      - <red>Sticky, hot, and oddly valuable.</red>
+
+  ghast_tear_kit:
+    name: <white>Ghast Tear Kit</white>
+    tier: rare
+    weight: 90
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: GHAST_TEAR
+        amount: 3
+      - material: GUNPOWDER
+        amount: 16
+    messages:
+      - <white>Regeneration potions just got easier.</white>
+
+  fortress_loot:
+    name: <gold>Fortress Loot</gold>
+    tier: rare
+    weight: 75
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: NETHER_WART
+        amount: 24
+      - material: GOLD_INGOT
+        amount: 16
+      - material: BLAZE_ROD
+        amount: 4
+    messages:
+      - <gold>Smells like a conquered nether fortress.</gold>
+
+  wither_bone_bundle:
+    name: <dark_gray>Wither Bone Bundle</dark_gray>
+    tier: rare
+    weight: 58
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: WITHER_SKELETON_SKULL
+        amount: 1
+      - material: BONE
+        amount: 32
+    messages:
+      - <dark_gray>One skull closer to the boss fight.</dark_gray>
+
+  netherite_scrap_cache:
+    name: <dark_red>Netherite Scrap Cache</dark_red>
+    tier: epic
+    weight: 32
+    broadcast: true
+    broadcastMessage: <red>%player%</red> <gray>smelted open a</gray> <gold>Netherite Scrap Cache</gold><gray>!</gray>
+    items:
+      - material: NETHERITE_SCRAP
+        amount: 4
+      - material: ANCIENT_DEBRIS
+        amount: 2
+    commands:
+      - experience add %player% 1200 points
+    messages:
+      - <dark_red>Upgrade templates never hurt.</dark_red>
+
+  inferno_armor_trim:
+    name: <gold>Inferno Armor Trim</gold>
+    tier: epic
+    weight: 22
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <gray>forged an</gray> <red>Inferno Armor Trim</red> <gray>from the Cache.</gray>
+    items:
+      - material: NETHERITE_UPGRADE_SMITHING_TEMPLATE
+        amount: 1
+        customModelData:
+          - 26240
+        pdc:
+          slate:demo_reward: inferno_trim
+      - material: GOLD_INGOT
+        amount: 24
+    messages:
+      - <gold>Your armor could look terrifying.</gold>
+
+  inferno_crown:
+    name: <dark_red><bold>Inferno Crown</bold></dark_red>
+    tier: legendary
+    weight: 9
+    broadcast: true
+    broadcastMessage: <dark_red><bold>%player%</bold></dark_red> <gold>claimed the Inferno Crown from the Cache!</gold>
+    items:
+      - material: GOLDEN_HELMET
+        amount: 1
+        customModelData:
+          - 26270
+        pdc:
+          slate:demo_reward: inferno_crown
+          slate:rarity: legendary
+      - material: FIRE_CHARGE
+        amount: 16
+    commands:
+      - effect give %player% minecraft:fire_resistance 600 0 true
+      - experience add %player% 3500 points
+    messages:
+      - <dark_red><bold>Legendary!</bold></dark_red> <gold>The Cache crowns you in flame.</gold>
+
+  brimstone_jackpot:
+    name: <gold>Brimstone Jackpot</gold>
+    tier: legendary
+    weight: 4
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>detonated a Brimstone Jackpot from the Inferno Cache!</yellow>
+    commands:
+      - give %player% minecraft:netherite_ingot 6
+      - give %player% minecraft:enchanted_golden_apple 2
+      - say %player% hit the Inferno Cache brimstone jackpot!
+    messages:
+      - <gold>The nether itself seems to cheer.</gold>

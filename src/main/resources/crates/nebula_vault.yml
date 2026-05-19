@@ -1,0 +1,280 @@
+# CSGO-scroll demo crate — void / end dimension theme.
+id: nebula_vault
+crate-version: 1
+state: active
+language: en
+name: <gradient:#7c3aed:#22d3ee><bold>Nebula Vault</bold></gradient>
+requiredKeys: 1
+maxPulls: 300
+cooldown: 2s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+  - minecraft:the_end
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.nebula_vault.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: csgo
+  tick-interval: 1
+  duration-ticks: 75
+  spin-speed-multiplier: 1.15
+  reveal-tail-ticks: 6
+  sound-tick: BLOCK_END_PORTAL_FRAME_FILL
+  sound-reveal: ENTITY_ENDERMAN_TELEPORT
+  skip-permission: slate.animation.skip
+  decoy-count: 18
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: PURPLE_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#a78bfa:#67e8f9><bold>Nebula Vault Key</bold></gradient>
+  lore:
+    - <dark_gray>Folded from endstone dust and starlight.</dark_gray>
+    - <gray>Opens the <light_purple>Nebula Vault</light_purple> once per use.</gray>
+    - ''
+    - <aqua>Right-click the anchored crate to open.</aqua>
+  material: TRIPWIRE_HOOK
+  customModelData:
+    - 26101
+  customItemId: minecraft:ominous_trial_key
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 48
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: END_CRYSTAL
+    height-offset: 2.05
+    scale: 0.75
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <light_purple>Right-click to open</light_purple>
+    - <aqua>Left-click to preview</aqua>
+
+pity:
+  enabled: true
+  opensRequired: 40
+  guaranteedTier: legendary
+
+tiers:
+  common:
+    name: <gray>Stellar Dust</gray>
+    weight: 680
+  rare:
+    name: <aqua>Void Shard</aqua>
+    weight: 230
+  epic:
+    name: <light_purple>Nebula Core</light_purple>
+    weight: 75
+  legendary:
+    name: <gold>Event Horizon</gold>
+    weight: 15
+
+prizes:
+  chorus_snack:
+    name: <gray>Chorus Snack Pack</gray>
+    tier: common
+    weight: 150
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: CHORUS_FRUIT
+        amount: 24
+      - material: POPPED_CHORUS_FRUIT
+        amount: 16
+    messages:
+      - <gray>The Vault hums with faint endermen chatter.</gray>
+
+  purpur_patch:
+    name: <gray>Purpur Patch</gray>
+    tier: common
+    weight: 140
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: PURPUR_BLOCK
+        amount: 32
+      - material: END_STONE_BRICKS
+        amount: 24
+    messages:
+      - <gray>Purpur bricks spill from the rift.</gray>
+
+  sculk_sample:
+    name: <dark_aqua>Sculk Sample</dark_aqua>
+    tier: common
+    weight: 125
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: SCULK
+        amount: 16
+      - material: SCULK_CATALYST
+        amount: 2
+    messages:
+      - <dark_aqua>Something ancient twitches in the dark.</dark_aqua>
+
+  amethyst_cluster:
+    name: <light_purple>Amethyst Cluster</light_purple>
+    tier: common
+    weight: 110
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: AMETHYST_BLOCK
+        amount: 24
+      - material: AMETHYST_SHARD
+        amount: 12
+    messages:
+      - <light_purple>Crystals ring as they settle in your pack.</light_purple>
+
+  end_ropeway:
+    name: <aqua>End Ropeway Kit</aqua>
+    tier: rare
+    weight: 85
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: ENDER_PEARL
+        amount: 8
+      - material: IRON_CHAIN
+        amount: 16
+      - material: LADDER
+        amount: 32
+    commands:
+      - effect give %player% minecraft:slow_falling 45 0 true
+    messages:
+      - <aqua>You could bridge the void with this — carefully.</aqua>
+
+  shulker_supplies:
+    name: <yellow>Shulker Supplies</yellow>
+    tier: rare
+    weight: 70
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: SHULKER_SHELL
+        amount: 4
+      - material: CHEST
+        amount: 4
+    messages:
+      - <yellow>Portable storage from the outer islands.</yellow>
+
+  echo_compass:
+    name: <aqua>Echo Compass</aqua>
+    tier: rare
+    weight: 55
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: RECOVERY_COMPASS
+        amount: 1
+        customModelData:
+          - 26110
+        pdc:
+          slate:demo_reward: echo_compass
+      - material: COMPASS
+        amount: 1
+    messages:
+      - <aqua>The needle spins toward forgotten cities.</aqua>
+
+  dragon_breath_vial:
+    name: <light_purple>Dragon Breath Vial</light_purple>
+    tier: epic
+    weight: 28
+    broadcast: true
+    broadcastMessage: <light_purple>%player%</light_purple> <gray>decanted</gray> <aqua>Dragon Breath</aqua> <gray>from the Nebula Vault.</gray>
+    items:
+      - material: DRAGON_BREATH
+        amount: 6
+      - material: GLASS_BOTTLE
+        amount: 8
+    commands:
+      - experience add %player% 900 points
+    messages:
+      - <light_purple>Lingering mist coils inside the bottle.</light_purple>
+
+  warden_resonance:
+    name: <dark_purple>Warden Resonance</dark_purple>
+    tier: epic
+    weight: 20
+    broadcast: true
+    broadcastMessage: <dark_purple>%player%</dark_purple> <gray>triggered a</gray> <light_purple>Warden Resonance</light_purple> <gray>from the Vault.</gray>
+    items:
+      - material: ECHO_SHARD
+        amount: 12
+      - material: SCULK_SENSOR
+        amount: 4
+      - material: CALIBRATED_SCULK_SENSOR
+        amount: 2
+    messages:
+      - <dark_purple>You feel vibrations in your bones.</dark_purple>
+
+  starfall_trident:
+    name: <gold><bold>Starfall Trident</bold></gold>
+    tier: legendary
+    weight: 8
+    broadcast: true
+    broadcastMessage: <gold><bold>%player%</bold></gold> <yellow>pulled a Starfall Trident from the Nebula Vault!</yellow>
+    items:
+      - material: TRIDENT
+        amount: 1
+        customModelData:
+          - 26150
+        pdc:
+          slate:demo_reward: starfall_trident
+          slate:rarity: legendary
+      - material: HEART_OF_THE_SEA
+        amount: 1
+    commands:
+      - experience add %player% 3000 points
+    messages:
+      - <gold><bold>Legendary!</bold></gold> <yellow>The void gifts a weapon forged from falling stars.</yellow>
+
+  singularity_jackpot:
+    name: <gold>Singularity Jackpot</gold>
+    tier: legendary
+    weight: 4
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>collapsed a Singularity Jackpot from the Nebula Vault!</yellow>
+    commands:
+      - give %player% minecraft:netherite_ingot 4
+      - give %player% minecraft:ender_chest 1
+      - experience add %player% 6000 points
+    messages:
+      - <gold>Reality bends — the Vault pays out big.</gold>

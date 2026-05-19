@@ -1,0 +1,274 @@
+# Slot-machine demo crate — casino / luxury theme.
+id: gilded_jackpot
+crate-version: 1
+state: active
+language: en
+name: <gradient:#fbbf24:#fef08a><bold>Gilded Jackpot</bold></gradient>
+requiredKeys: 1
+maxPulls: 500
+cooldown: 1s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.gilded_jackpot.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: slot-machine
+  tick-interval: 1
+  duration-ticks: 90
+  spin-speed-multiplier: 1.1
+  reveal-tail-ticks: 9
+  sound-tick: UI_BUTTON_CLICK
+  sound-reveal: ENTITY_EXPERIENCE_ORB_PICKUP
+  skip-permission: slate.animation.skip
+  decoy-count: 24
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: YELLOW_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#fde047:#fef9c3><bold>Gilded Jackpot Token</bold></gradient>
+  lore:
+    - <dark_gray>Brass-edged token from the high-roller floor.</dark_gray>
+    - <gray>Insert into the <gold>Gilded Jackpot</gold> machine.</gray>
+    - ''
+    - <yellow>Right-click the anchored crate to spin.</yellow>
+  material: GOLD_NUGGET
+  customModelData:
+    - 26301
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 48
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: GOLD_BLOCK
+    height-offset: 1.9
+    scale: 0.8
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <gold>Right-click to spin</gold>
+    - <yellow>Left-click to preview odds</yellow>
+
+pity:
+  enabled: true
+  opensRequired: 45
+  guaranteedTier: epic
+
+tiers:
+  common:
+    name: <gray>Chip</gray>
+    weight: 700
+  rare:
+    name: <yellow>High Roller</yellow>
+    weight: 210
+  epic:
+    name: <gold>Jackpot Line</gold>
+    weight: 75
+  legendary:
+    name: <light_purple><bold>House Bust</bold></light_purple>
+    weight: 15
+
+prizes:
+  copper_tokens:
+    name: <gray>Copper Tokens</gray>
+    tier: common
+    weight: 160
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: COPPER_INGOT
+        amount: 32
+      - material: RAW_GOLD
+        amount: 8
+    messages:
+      - <gray>The reels spit out pocket change.</gray>
+
+  lapis_chips:
+    name: <blue>Lapis Chips</blue>
+    tier: common
+    weight: 145
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: LAPIS_LAZULI
+        amount: 32
+      - material: LAPIS_BLOCK
+        amount: 8
+    messages:
+      - <blue>Enchanting fuel on the house.</blue>
+
+  iron_antee:
+    name: <gray>Iron Ante</gray>
+    tier: common
+    weight: 130
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: IRON_INGOT
+        amount: 24
+      - material: IRON_NUGGET
+        amount: 32
+    messages:
+      - <gray>You break even — barely.</gray>
+
+  golden_apple_tray:
+    name: <gold>Golden Apple Tray</gold>
+    tier: common
+    weight: 115
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: GOLDEN_APPLE
+        amount: 2
+      - material: APPLE
+        amount: 16
+    messages:
+      - <gold>A snack between spins.</gold>
+
+  emerald_stack:
+    name: <green>Emerald Stack</green>
+    tier: rare
+    weight: 88
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: EMERALD
+        amount: 16
+      - material: EMERALD_BLOCK
+        amount: 2
+    commands:
+      - experience add %player% 400 points
+    messages:
+      - <green>The dealer slides emeralds across the table.</green>
+
+  diamond_flush:
+    name: <aqua>Diamond Flush</aqua>
+    tier: rare
+    weight: 72
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: DIAMOND
+        amount: 8
+      - material: DIAMOND_BLOCK
+        amount: 1
+    messages:
+      - <aqua>Three diamonds line up — not bad.</aqua>
+
+  enchanted_bookie:
+    name: <light_purple>Enchanted Bookie</light_purple>
+    tier: rare
+    weight: 55
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: ENCHANTED_BOOK
+        amount: 2
+      - material: BOOKSHELF
+        amount: 8
+    messages:
+      - <light_purple>Fortune favors the prepared enchanter.</light_purple>
+
+  vault_door_prize:
+    name: <gold>Vault Door Prize</gold>
+    tier: epic
+    weight: 30
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <gray>cracked the</gray> <yellow>Vault Door Prize</yellow> <gray>on the Gilded Jackpot!</gray>
+    items:
+      - material: GOLD_BLOCK
+        amount: 16
+      - material: IRON_BLOCK
+        amount: 16
+    commands:
+      - experience add %player% 1500 points
+    messages:
+      - <gold>The machine pays out a wall of bullion.</gold>
+
+  triple_seven:
+    name: <light_purple>Triple Seven</light_purple>
+    tier: epic
+    weight: 22
+    broadcast: true
+    broadcastMessage: <light_purple>%player%</light_purple> <gray>hit a</gray> <gold>Triple Seven</gold> <gray>on the reels!</gray>
+    items:
+      - material: GOLD_INGOT
+        amount: 32
+      - material: NETHER_STAR
+        amount: 1
+        customModelData:
+          - 26340
+        pdc:
+          slate:demo_reward: triple_seven
+    messages:
+      - <light_purple>Lucky sevens glow on every reel.</light_purple>
+
+  house_bust_royale:
+    name: <light_purple><bold>House Bust Royale</bold></light_purple>
+    tier: legendary
+    weight: 9
+    broadcast: true
+    broadcastMessage: <light_purple><bold>%player%</bold></light_purple> <gold>busted the house on the Gilded Jackpot!</gold>
+    items:
+      - material: NETHERITE_INGOT
+        amount: 2
+      - material: ENCHANTED_GOLDEN_APPLE
+        amount: 2
+        customModelData:
+          - 26370
+        pdc:
+          slate:demo_reward: house_bust
+    commands:
+      - experience add %player% 4000 points
+    messages:
+      - <light_purple><bold>Legendary!</bold></light_purple> <gold>The casino floor erupts in cheers.</gold>
+
+  progressive_mega_pot:
+    name: <gold>Progressive Mega Pot</gold>
+    tier: legendary
+    weight: 3
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>won the Progressive Mega Pot!</yellow>
+    commands:
+      - give %player% minecraft:diamond_block 8
+      - give %player% minecraft:gold_block 16
+      - experience add %player% 8000 points
+      - say %player% took the Gilded Jackpot progressive mega pot!
+    messages:
+      - <gold>Jackpot lights blind everyone nearby.</gold>

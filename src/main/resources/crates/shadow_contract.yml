@@ -1,0 +1,280 @@
+# Agency-pick demo crate — espionage / noir theme.
+id: shadow_contract
+crate-version: 1
+state: active
+language: en
+name: <gradient:#1f2937:#991b1b><bold>Shadow Contract</bold></gradient>
+requiredKeys: 2
+maxPulls: 200
+cooldown: 2s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.shadow_contract.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: agency-pick
+  tick-interval: 1
+  duration-ticks: 65
+  spin-speed-multiplier: 1.2
+  reveal-tail-ticks: 5
+  sound-tick: ENTITY_VILLAGER_NO
+  sound-reveal: ENTITY_WARDEN_HEARTBEAT
+  skip-permission: slate.animation.skip
+  decoy-count: 16
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: GRAY_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#4b5563:#b91c1c><bold>Shadow Contract Seal</bold></gradient>
+  lore:
+    - <dark_gray>Wax seal stamped with an unknown sigil.</dark_gray>
+    - <gray>Authorize a pick from the <dark_red>Shadow Contract</dark_red>.</gray>
+    - '<gray>Keys required: <yellow>2</yellow></gray>'
+    - ''
+    - <dark_gray>Right-click to accept the contract.</dark_gray>
+  material: PAPER
+  customModelData:
+    - 26501
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 44
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: SPYGLASS
+    height-offset: 1.95
+    scale: 0.85
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <dark_red>Right-click to negotiate</dark_red>
+    - <gray>Left-click to preview dossier</gray>
+
+pity:
+  enabled: true
+  opensRequired: 32
+  guaranteedTier: epic
+
+tiers:
+  common:
+    name: <gray>Redacted</gray>
+    weight: 670
+  rare:
+    name: <dark_red>Classified</dark_red>
+    weight: 240
+  epic:
+    name: <light_purple>Black Ops</light_purple>
+    weight: 70
+  legendary:
+    name: <gold><bold>Zero Hour</bold></gold>
+    weight: 20
+
+prizes:
+  smoke_bomb_pouch:
+    name: <gray>Smoke Bomb Pouch</gray>
+    tier: common
+    weight: 155
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: GUNPOWDER
+        amount: 16
+      - material: FIREWORK_STAR
+        amount: 4
+    messages:
+      - <gray>Disappear in style — results may vary.</gray>
+
+  lockpick_kit:
+    name: <gray>Lockpick Kit</gray>
+    tier: common
+    weight: 140
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: TRIPWIRE_HOOK
+        amount: 4
+      - material: IRON_INGOT
+        amount: 8
+    messages:
+      - <gray>For educational purposes only.</gray>
+
+  forged_documents:
+    name: <white>Forged Documents</white>
+    tier: common
+    weight: 125
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: PAPER
+        amount: 32
+      - material: BOOK
+        amount: 4
+    messages:
+      - <white>Your name is spelled wrong on purpose.</white>
+
+  night_vision_drops:
+    name: <dark_gray>Night Vision Drops</dark_gray>
+    tier: common
+    weight: 110
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: SPIDER_EYE
+        amount: 8
+      - material: FERMENTED_SPIDER_EYE
+        amount: 4
+    commands:
+      - effect give %player% minecraft:night_vision 90 0 true
+    messages:
+      - <dark_gray>The shadows feel friendlier now.</dark_gray>
+
+  silenced_crossbow:
+    name: <dark_red>Silenced Crossbow Kit</dark_red>
+    tier: rare
+    weight: 85
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: CROSSBOW
+        amount: 1
+      - material: ARROW
+        amount: 32
+      - material: SPECTRAL_ARROW
+        amount: 8
+    messages:
+      - <dark_red>Quiet, precise, deniable.</dark_red>
+
+  agent_gadget_case:
+    name: <aqua>Agent Gadget Case</aqua>
+    tier: rare
+    weight: 70
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: ENDER_PEARL
+        amount: 4
+      - material: CLOCK
+        amount: 1
+      - material: COMPASS
+        amount: 1
+    messages:
+      - <aqua>Everything a field agent needs — almost.</aqua>
+
+  poison_vial_set:
+    name: <dark_green>Poison Vial Set</dark_green>
+    tier: rare
+    weight: 55
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: POTION
+        amount: 3
+      - material: GLASS_BOTTLE
+        amount: 6
+    messages:
+      - <dark_green>Labelled "Do not drink" in three languages.</dark_green>
+
+  encrypted_drive:
+    name: <light_purple>Encrypted Drive</light_purple>
+    tier: epic
+    weight: 28
+    broadcast: true
+    broadcastMessage: <gray>%player%</gray> <dark_red>recovered an</dark_red> <light_purple>Encrypted Drive</light_purple> <gray>from the Shadow Contract.</gray>
+    items:
+      - material: LODESTONE
+        amount: 1
+        customModelData:
+          - 26530
+        pdc:
+          slate:demo_reward: encrypted_drive
+      - material: REDSTONE_BLOCK
+        amount: 8
+    commands:
+      - experience add %player% 1000 points
+    messages:
+      - <light_purple>Contents self-destruct in T-minus never.</light_purple>
+
+  handler_briefcase:
+    name: <gold>Handler Briefcase</gold>
+    tier: epic
+    weight: 20
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <gray>secured the</gray> <yellow>Handler Briefcase</yellow><gray>.</gray>
+    items:
+      - material: CHEST
+        amount: 1
+      - material: GOLD_INGOT
+        amount: 24
+      - material: EMERALD
+        amount: 12
+    messages:
+      - <gold>Your contact owes you a favor.</gold>
+
+  zero_hour_badge:
+    name: <gold><bold>Zero Hour Badge</bold></gold>
+    tier: legendary
+    weight: 9
+    broadcast: true
+    broadcastMessage: <gold><bold>%player%</bold></gold> <dark_red>accepted the Zero Hour Badge from the Shadow Contract!</dark_red>
+    items:
+      - material: NETHER_STAR
+        amount: 1
+        customModelData:
+          - 26560
+        pdc:
+          slate:demo_reward: zero_hour_badge
+          slate:rarity: legendary
+    commands:
+      - effect give %player% minecraft:invisibility 30 0 true
+      - experience add %player% 2800 points
+    messages:
+      - <gold><bold>Legendary!</bold></gold> <dark_red>Mission clearance: maximum.</dark_red>
+
+  deep_cover_payout:
+    name: <gold>Deep Cover Payout</gold>
+    tier: legendary
+    weight: 4
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>cashed the Deep Cover Payout!</yellow>
+    commands:
+      - give %player% minecraft:diamond 10
+      - give %player% minecraft:totem_of_undying 1
+      - experience add %player% 5000 points
+    messages:
+      - <gold>The agency denies any knowledge of this reward.</gold>

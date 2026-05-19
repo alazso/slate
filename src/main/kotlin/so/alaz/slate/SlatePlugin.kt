@@ -254,8 +254,18 @@ class SlatePlugin : JavaPlugin() {
         val hasAnyCrateYaml = cratesDir.walkTopDown()
             .any { it.isFile && it.extension.equals("yml", ignoreCase = true) }
         if (hasAnyCrateYaml) return
-        saveResource("crates/astral.yml", false)
-        LogUtil.info("Seeded default crate: crates/astral.yml")
+        val defaultCrates = listOf(
+            "nebula_vault.yml",
+            "inferno_cache.yml",
+            "gilded_jackpot.yml",
+            "deepsea_slots.yml",
+            "shadow_contract.yml",
+            "verdant_choice.yml",
+        )
+        defaultCrates.forEach { fileName ->
+            saveResource("crates/$fileName", false)
+        }
+        LogUtil.info("Seeded ${defaultCrates.size} default crates into crates/")
     }
 
     private fun registerPlaceholderExpansion() {
