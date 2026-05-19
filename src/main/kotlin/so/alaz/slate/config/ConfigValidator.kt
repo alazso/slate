@@ -8,7 +8,9 @@ import org.bukkit.Material
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.Sound
+import so.alaz.slate.currency.service.CurrencyValidation
 import so.alaz.slate.crate.KeyProvider
+import so.alaz.slate.crate.CrateLeftClickAction
 import so.alaz.slate.probability.SelectionMode
 import so.alaz.slate.probability.SelectionStructure
 import so.alaz.slate.util.parseSimpleDurationOrNull
@@ -135,8 +137,15 @@ class ConfigValidator {
                 errors += itemErrors
                 val commands = config.getStringList("$path.commands")
                 val messages = config.getStringList("$path.messages")
-                if (itemsRaw.isEmpty() && commands.isEmpty() && messages.isEmpty()) {
-                    errors += ValidationError(file.path, path, "prize must define at least one of items/commands/messages")
+                val grantErrors = validateCurrencyEntries(
+                    filePath = file.path,
+                    list = config.getMapList("$path.grants"),
+                    rootPath = "$path.grants",
+                    amountLabel = "grant",
+                )
+                errors += grantErrors
+                if (itemsRaw.isEmpty() && commands.isEmpty() && messages.isEmpty() && grantErrors.isEmpty() && config.getMapList("$path.grants").isEmpty()) {
+                    errors += ValidationError(file.path, path, "prize must define at least one of items/commands/messages/grants")
                 }
                 if (config.contains("$path.minRange") || config.contains("$path.maxRange")) {
                     errors += ValidationError(file.path, path, "minRange/maxRange is not supported")
@@ -211,7 +220,14 @@ class ConfigValidator {
 
         validateKeyStrictFields(file, config, errors, warnings)
         validateRequirementFields(file, config, errors, warnings)
+        errors += validateCurrencyEntries(
+            filePath = file.path,
+            list = config.getMapList("costs"),
+            rootPath = "costs",
+            amountLabel = "cost",
+        )
         validateGuiFields(file, config, errors, warnings)
+        validateInteractionFields(file, config, errors)
         validateDisplayFields(file, config, errors, warnings)
 
         if (config.contains("type")) {
@@ -303,6 +319,103 @@ class ConfigValidator {
         if (crateSlots.size != crateSlots.toSet().size) {
             errors += ValidationError(file.path, "gui.menu.crate-slots", "gui.menu.crate-slots must be unique")
         }
+
+        val breakConfirmWindowSeconds = config.getLong("anchors.break-confirmation.window-seconds", 5L)
+        if (breakConfirmWindowSeconds <= 0L) {
+            errors += ValidationError(
+                file.path,
+                "anchors.break-confirmation.window-seconds",
+                "anchors.break-confirmation.window-seconds must be > 0",
+            )
+        }
+
+        val defaultProvider = config.getString("currency.default-provider", "auto").orEmpty()
+        if (defaultProvider !in setOf("auto", "ledger", "vault")) {
+            errors += ValidationError(
+                file.path,
+                "currency.default-provider",
+                "currency.default-provider must be one of: auto, ledger, vault",
+            )
+        } else if (defaultProvider != "auto" && !CurrencyValidation.isValidProviderId(defaultProvider)) {
+            errors += ValidationError(file.path, "currency.default-provider", "currency.default-provider must be a valid identifier")
+        }
+        val defaultCurrency = config.getString("currency.default-currency", "coins").orEmpty()
+        if (!CurrencyValidation.isValidCurrencyId(defaultCurrency)) {
+            errors += ValidationError(file.path, "currency.default-currency", "currency.default-currency must be lowercase snake_case")
+        }
+        val vaultCurrencyId = config.getString("currency.vault.currency-id", "money").orEmpty()
+        if (!CurrencyValidation.isValidCurrencyId(vaultCurrencyId)) {
+            errors += ValidationError(file.path, "currency.vault.currency-id", "currency.vault.currency-id must be lowercase snake_case")
+        }
+        val vaultDecimals = config.getInt("currency.vault.decimals", 2)
+        if (vaultDecimals !in 0..9) {
+            errors += ValidationError(file.path, "currency.vault.decimals", "currency.vault.decimals must be between 0 and 9")
+        }
+        val formatStandard = config.getString("currency.format.standard", "us").orEmpty().lowercase()
+        if (formatStandard !in setOf("us", "uk", "eu", "jp", "in", "ch", "custom")) {
+            errors += ValidationError(
+                file.path,
+                "currency.format.standard",
+                "currency.format.standard must be one of: us, uk, eu, jp, in, ch, custom",
+            )
+        }
+        val symbolPlacement = config.getString("currency.format.symbol-placement", "prefix").orEmpty().lowercase()
+        if (symbolPlacement !in setOf("prefix", "suffix")) {
+            errors += ValidationError(
+                file.path,
+                "currency.format.symbol-placement",
+                "currency.format.symbol-placement must be prefix or suffix",
+            )
+        }
+        val minFractionDigits = config.getInt("currency.format.min-fraction-digits", 2)
+        val maxFractionDigits = config.getInt("currency.format.max-fraction-digits", 2)
+        if (minFractionDigits !in 0..9) {
+            errors += ValidationError(
+                file.path,
+                "currency.format.min-fraction-digits",
+                "currency.format.min-fraction-digits must be between 0 and 9",
+            )
+        }
+        if (maxFractionDigits !in 0..9) {
+            errors += ValidationError(
+                file.path,
+                "currency.format.max-fraction-digits",
+                "currency.format.max-fraction-digits must be between 0 and 9",
+            )
+        }
+        if (minFractionDigits > maxFractionDigits) {
+            errors += ValidationError(
+                file.path,
+                "currency.format.min-fraction-digits",
+                "currency.format.min-fraction-digits must be <= currency.format.max-fraction-digits",
+            )
+        }
+        if (formatStandard == "custom") {
+            val pattern = config.getString("currency.format.custom.pattern").orEmpty()
+            if (pattern.isBlank()) {
+                errors += ValidationError(
+                    file.path,
+                    "currency.format.custom.pattern",
+                    "currency.format.custom.pattern is required when currency.format.standard is custom",
+                )
+            }
+            val decimalSeparator = config.getString("currency.format.custom.decimal-separator", ".").orEmpty()
+            val groupingSeparator = config.getString("currency.format.custom.grouping-separator", ",").orEmpty()
+            if (decimalSeparator.length != 1) {
+                errors += ValidationError(
+                    file.path,
+                    "currency.format.custom.decimal-separator",
+                    "currency.format.custom.decimal-separator must be a single character",
+                )
+            }
+            if (groupingSeparator.length != 1) {
+                errors += ValidationError(
+                    file.path,
+                    "currency.format.custom.grouping-separator",
+                    "currency.format.custom.grouping-separator must be a single character",
+                )
+            }
+        }
     }
 
     private fun validateKeyStrictFields(
@@ -317,7 +430,7 @@ class ConfigValidator {
             errors += ValidationError(
                 file.path,
                 "key.provider",
-                "key.provider must be one of: vanilla, nexo, craftengine",
+                "key.provider must be one of: vanilla, nexo, craftengine, itemsadder",
             )
         }
         val providerItemId = config.getString("key.providerItemId")?.trim().orEmpty()
@@ -545,6 +658,18 @@ class ConfigValidator {
             if (durationTicks <= 0) {
                 errors += ValidationError(file.path, "animation.duration-ticks", "animation.duration-ticks must be > 0")
             }
+            val spinSpeedMultiplier = config.getDouble("animation.spin-speed-multiplier", 1.0)
+            if (!spinSpeedMultiplier.isFinite() || spinSpeedMultiplier <= 0.0) {
+                errors += ValidationError(
+                    file.path,
+                    "animation.spin-speed-multiplier",
+                    "animation.spin-speed-multiplier must be a finite number > 0",
+                )
+            }
+            val revealTailTicks = config.getInt("animation.reveal-tail-ticks", 5)
+            if (revealTailTicks <= 0) {
+                errors += ValidationError(file.path, "animation.reveal-tail-ticks", "animation.reveal-tail-ticks must be > 0")
+            }
             val decoyCount = config.getInt("animation.decoy-count", 20)
             if (decoyCount < 0) {
                 errors += ValidationError(file.path, "animation.decoy-count", "animation.decoy-count must be >= 0")
@@ -592,6 +717,22 @@ class ConfigValidator {
         }
     }
 
+    private fun validateInteractionFields(
+        file: File,
+        config: YamlConfiguration,
+        errors: MutableList<ValidationError>,
+    ) {
+        val leftClickAction = config.getString("left-click")
+            ?: config.getString("interaction.left-click")
+        if (leftClickAction != null && CrateLeftClickAction.parse(leftClickAction) == null) {
+            errors += ValidationError(
+                file.path,
+                if (config.contains("left-click")) "left-click" else "interaction.left-click",
+                "left-click action must be one of: none, open-preview",
+            )
+        }
+    }
+
     private fun validateSound(
         file: File,
         raw: String?,
@@ -602,5 +743,35 @@ class ConfigValidator {
         if (runCatching { Sound.valueOf(raw) }.isFailure) {
             warnings += ValidationWarning(file.path, path, "unknown sound '$raw'; sound will be ignored")
         }
+    }
+
+    private fun validateCurrencyEntries(
+        filePath: String,
+        list: List<Map<*, *>>,
+        rootPath: String,
+        amountLabel: String,
+    ): List<ValidationError> {
+        val errors = mutableListOf<ValidationError>()
+        list.forEachIndexed { index, entry ->
+            val path = "$rootPath[$index]"
+            val type = entry["type"]?.toString()?.lowercase()
+            if (type != "currency") {
+                errors += ValidationError(filePath, "$path.type", "only 'currency' is supported currently")
+                return@forEachIndexed
+            }
+            val provider = entry["provider"]?.toString()?.ifBlank { "slate" } ?: "slate"
+            if (!CurrencyValidation.isValidProviderId(provider)) {
+                errors += ValidationError(filePath, "$path.provider", "provider must be a valid identifier")
+            }
+            val currency = entry["currency"]?.toString()?.trim().orEmpty()
+            if (!CurrencyValidation.isValidCurrencyId(currency)) {
+                errors += ValidationError(filePath, "$path.currency", "currency must be lowercase snake_case")
+            }
+            val amount = (entry["amount"] as? Number)?.toLong()
+            if (amount == null || amount <= 0L) {
+                errors += ValidationError(filePath, "$path.amount", "$amountLabel amount must be > 0")
+            }
+        }
+        return errors
     }
 }

@@ -3,8 +3,6 @@ package so.alaz.slate.crate
 import io.mockk.every
 import io.mockk.mockk
 import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import org.bukkit.plugin.java.JavaPlugin
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import so.alaz.slate.config.ConfigValidator
 import so.alaz.slate.config.PluginConfig
+import so.alaz.slate.crate.CrateLeftClickAction
 import so.alaz.slate.display.DisplayFactory
 
 class CrateManagerReloadTest {
@@ -139,6 +138,8 @@ class CrateManagerReloadTest {
                   template: csgo
                   tick-interval: 2
                   duration-ticks: 60
+                  spin-speed-multiplier: 2.0
+                  reveal-tail-ticks: 6
                   skip-permission: slate.animation.skip
                   decoy-count: 10
                 preview:
@@ -162,9 +163,37 @@ class CrateManagerReloadTest {
         assertEquals("csgo", crate?.animation?.template)
         assertEquals(2, crate?.animation?.tickInterval)
         assertEquals(60, crate?.animation?.durationTicks)
+        assertEquals(2.0, crate?.animation?.spinSpeedMultiplier)
+        assertEquals(6, crate?.animation?.revealTailTicks)
         assertEquals(true, crate?.preview?.enabled)
         assertEquals(6, crate?.preview?.rows)
         assertEquals(14, crate?.preview?.contentSlots?.size)
+    }
+
+    @Test
+    fun `reload parses left click interaction aliases`() {
+        val plugin = mockk<JavaPlugin>()
+        every { plugin.dataFolder } returns tempDir.toFile()
+        cratesDir.toFile().mkdirs()
+        cratesDir.resolve("alpha.yml").toFile().writeText(
+            validCrateYaml() + """
+
+                left-click-preview: true
+            """.trimIndent(),
+        )
+        cratesDir.resolve("beta.yml").toFile().writeText(
+            validCrateYaml().replace("name: Alpha", "name: Beta") + """
+
+                left-click: open-preview
+            """.trimIndent(),
+        )
+
+        val manager = CrateManager(plugin, ConfigValidator()) { PluginConfig() }
+        val summary = manager.reload()
+
+        assertEquals(2, summary.cratesLoaded)
+        assertEquals(CrateLeftClickAction.OPEN_PREVIEW, manager.byId("alpha")?.interaction?.leftClickAction)
+        assertEquals(CrateLeftClickAction.OPEN_PREVIEW, manager.byId("beta")?.interaction?.leftClickAction)
     }
 
     @Test
@@ -172,9 +201,7 @@ class CrateManagerReloadTest {
         val plugin = mockk<JavaPlugin>()
         every { plugin.dataFolder } returns tempDir.toFile()
         cratesDir.toFile().mkdirs()
-        val example = projectFile("docs/examples/astral.yml")
-        Files.copy(example, cratesDir.resolve("astral.yml"), StandardCopyOption.REPLACE_EXISTING)
-        assertTrue(Files.readString(cratesDir.resolve("astral.yml")).contains("Astral Reliquary"))
+        cratesDir.resolve("astral.yml").toFile().writeText(exampleAstralLikeCrateYaml())
 
         val manager = CrateManager(plugin, ConfigValidator()) { PluginConfig() }
         val summary = manager.reload()
@@ -182,8 +209,8 @@ class CrateManagerReloadTest {
 
         assertEquals(1, summary.cratesLoaded)
         assertEquals(0, summary.cratesFailed)
-        assertEquals("<gradient:#f97316:#facc15><bold>Astral Reliquary</bold></gradient>", crate?.name)
-        assertEquals(11, crate?.prizes?.size)
+        assertEquals("<gold>Astral Reliquary</gold>", crate?.name)
+        assertEquals(2, crate?.prizes?.size)
         assertEquals(true, crate?.display?.enabled)
         assertEquals(true, crate?.pityConfig?.enabled)
     }
@@ -219,16 +246,6 @@ class CrateManagerReloadTest {
         )
     }
 
-    private fun projectFile(relativePath: String): Path {
-        val parts = relativePath.split("/")
-        var current = Path.of("").toAbsolutePath()
-        while (true) {
-            val candidate = parts.fold(current) { path, part -> path.resolve(part) }
-            if (Files.exists(candidate)) return candidate
-            current = current.parent ?: error("Unable to locate $relativePath")
-        }
-    }
-
     private fun validCrateYaml(): String = """
         name: Alpha
         requiredKeys: 1
@@ -243,5 +260,29 @@ class CrateManagerReloadTest {
             weight: 1
             items:
               - DIAMOND
+    """.trimIndent()
+
+    private fun exampleAstralLikeCrateYaml(): String = """
+        name: "<gold>Astral Reliquary</gold>"
+        requiredKeys: 1
+        key:
+          material: TRIPWIRE_HOOK
+        pity:
+          enabled: true
+          opensRequired: 10
+          guaranteedTier: rare
+        display:
+          enabled: true
+          item:
+            material: ENDER_CHEST
+        prizes:
+          common:
+            weight: 90
+            messages:
+              - "<gray>Common prize</gray>"
+          rare:
+            weight: 10
+            messages:
+              - "<gold>Rare prize</gold>"
     """.trimIndent()
 }

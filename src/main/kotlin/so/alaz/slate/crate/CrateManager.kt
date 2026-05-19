@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Display
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.plugin.java.JavaPlugin
+import so.alaz.slate.currency.domain.CurrencyAmount
 import so.alaz.slate.config.ConfigValidator
 import so.alaz.slate.config.PluginConfig
 import so.alaz.slate.config.SlotRangeParser
@@ -176,6 +177,7 @@ class CrateManager(
                 items = parsePrizeItems(yaml.getList("$path.items")),
                 commands = yaml.getStringList("$path.commands"),
                 messages = yaml.getStringList("$path.messages"),
+                grants = parsePrizeGrants(yaml.getMapList("$path.grants")),
             )
         }
 
@@ -201,8 +203,10 @@ class CrateManager(
             allowedWorlds = normalizeWorlds(yaml.getStringList("allowedWorlds").toSet()),
             lifecycle = parseLifecycle(yaml),
             requirements = parseRequirements(yaml),
+            costs = parseCrateCosts(yaml.getMapList("costs")),
             animation = parseAnimationConfig(yaml),
             preview = parsePreviewConfig(yaml),
+            interaction = parseInteractionConfig(yaml),
             pityConfig = yaml.getConfigurationSection("pity")?.let { pity ->
                 PityConfig(
                     enabled = pity.getBoolean("enabled", false),
@@ -268,6 +272,8 @@ class CrateManager(
             template = yaml.getString("animation.template", "csgo").orEmpty(),
             tickInterval = yaml.getInt("animation.tick-interval", 1).coerceAtLeast(1),
             durationTicks = yaml.getInt("animation.duration-ticks", 80).coerceAtLeast(1),
+            spinSpeedMultiplier = yaml.getDouble("animation.spin-speed-multiplier", 1.0).coerceAtLeast(0.1),
+            revealTailTicks = yaml.getInt("animation.reveal-tail-ticks", 5).coerceAtLeast(1),
             soundTick = yaml.getString("animation.sound-tick")?.takeIf { runCatching { Sound.valueOf(it) }.isSuccess },
             soundReveal = yaml.getString("animation.sound-reveal")?.takeIf { runCatching { Sound.valueOf(it) }.isSuccess },
             skipPermission = yaml.getString("animation.skip-permission", "slate.animation.skip").orEmpty(),
@@ -291,6 +297,17 @@ class CrateManager(
             showChances = yaml.getBoolean("preview.show-chances", true),
             showTiers = yaml.getBoolean("preview.show-tiers", true),
         )
+    }
+
+    private fun parseInteractionConfig(yaml: YamlConfiguration): CrateInteractionConfig {
+        val legacyLeftClickPreview = yaml.getBoolean("left-click-preview", false)
+        val leftClickRaw = yaml.getString("left-click")
+            ?: yaml.getString("interaction.left-click")
+        val leftClickAction = when {
+            legacyLeftClickPreview -> CrateLeftClickAction.OPEN_PREVIEW
+            else -> CrateLeftClickAction.parse(leftClickRaw) ?: CrateLeftClickAction.NONE
+        }
+        return CrateInteractionConfig(leftClickAction = leftClickAction)
     }
 
     private fun parseDisplayConfig(yaml: YamlConfiguration): CrateDisplayConfig {
@@ -376,4 +393,42 @@ class CrateManager(
             }
         }
     }
+
+    private fun parseCrateCosts(raw: List<Map<*, *>>): List<CrateCost> =
+        raw.mapNotNull { entry ->
+            val type = entry["type"]?.toString()?.lowercase() ?: return@mapNotNull null
+            when (type) {
+                "currency" -> {
+                    val currency = entry["currency"]?.toString()?.trim().orEmpty()
+                    val provider = entry["provider"]?.toString()?.trim().orEmpty().ifBlank { "slate" }
+                    val amount = (entry["amount"] as? Number)?.toLong() ?: 0L
+                    CrateCost.CurrencyCost(
+                        provider = provider,
+                        currency = currency,
+                        amount = CurrencyAmount.ofMinorUnits(amount),
+                    )
+                }
+
+                else -> null
+            }
+        }
+
+    private fun parsePrizeGrants(raw: List<Map<*, *>>): List<PrizeGrant> =
+        raw.mapNotNull { entry ->
+            val type = entry["type"]?.toString()?.lowercase() ?: return@mapNotNull null
+            when (type) {
+                "currency" -> {
+                    val currency = entry["currency"]?.toString()?.trim().orEmpty()
+                    val provider = entry["provider"]?.toString()?.trim().orEmpty().ifBlank { "slate" }
+                    val amount = (entry["amount"] as? Number)?.toLong() ?: 0L
+                    PrizeGrant.CurrencyGrant(
+                        provider = provider,
+                        currency = currency,
+                        amount = CurrencyAmount.ofMinorUnits(amount),
+                    )
+                }
+
+                else -> null
+            }
+        }
 }

@@ -5,6 +5,8 @@ data class CrateAnimationConfig(
     val template: String = "csgo",
     val tickInterval: Int = 1,
     val durationTicks: Int = 80,
+    val spinSpeedMultiplier: Double = 1.0,
+    val revealTailTicks: Int = 5,
     val soundTick: String? = null,
     val soundReveal: String? = null,
     val skipPermission: String = "slate.animation.skip",
@@ -23,4 +25,22 @@ data class CratePreviewConfig(
     val showChances: Boolean = true,
     val showTiers: Boolean = true,
 )
+
+data class CrateInteractionConfig(
+    val leftClickAction: CrateLeftClickAction = CrateLeftClickAction.NONE,
+)
+
+enum class CrateLeftClickAction {
+    NONE,
+    OPEN_PREVIEW,
+    ;
+
+    companion object {
+        fun parse(raw: String?): CrateLeftClickAction? = when (raw?.trim()?.lowercase()) {
+            null, "", "none", "off", "disabled" -> NONE
+            "open-preview", "open_preview", "preview", "preview-open", "preview_open" -> OPEN_PREVIEW
+            else -> null
+        }
+    }
+}
 

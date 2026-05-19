@@ -11,6 +11,7 @@ data class Prize(
     val items: List<PrizeItem>,
     val commands: List<String>,
     val messages: List<String>,
+    val grants: List<PrizeGrant> = emptyList(),
 )
 
 data class PrizeItem(
