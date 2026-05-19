@@ -306,6 +306,51 @@ class ExposedStorage(
             }
     }
 
+    override suspend fun getLatestOpen(crateId: String): GlobalOpenHistoryEntry? = tx {
+        OpenLogTable
+            .selectAll()
+            .where { OpenLogTable.crateId eq crateId }
+            .orderBy(OpenLogTable.openedAtMillis to SortOrder.DESC)
+            .limit(1)
+            .singleOrNull()
+            ?.toGlobalOpenHistoryEntry()
+    }
+
+    override suspend fun getLatestOpen(uuid: UUID, crateId: String): OpenHistoryEntry? = tx {
+        OpenLogTable
+            .selectAll()
+            .where { (OpenLogTable.uuid eq uuid) and (OpenLogTable.crateId eq crateId) }
+            .orderBy(OpenLogTable.openedAtMillis to SortOrder.DESC)
+            .limit(1)
+            .singleOrNull()
+            ?.toOpenHistoryEntry()
+    }
+
+    override suspend fun countTotalOpens(uuid: UUID): Int = tx {
+        OpenLogTable
+            .selectAll()
+            .where { OpenLogTable.uuid eq uuid }
+            .count()
+            .toInt()
+    }
+
+    override suspend fun countTotalOpens(crateId: String): Int = tx {
+        OpenLogTable
+            .selectAll()
+            .where { OpenLogTable.crateId eq crateId }
+            .count()
+            .toInt()
+    }
+
+    override suspend fun listRecentWinners(crateId: String, limit: Int): List<GlobalOpenHistoryEntry> = tx {
+        OpenLogTable
+            .selectAll()
+            .where { OpenLogTable.crateId eq crateId }
+            .orderBy(OpenLogTable.openedAtMillis to SortOrder.DESC)
+            .limit(limit.coerceIn(1, 100))
+            .map { it.toGlobalOpenHistoryEntry() }
+    }
+
     override suspend fun upsertCrateAnchor(crateId: String, worldKey: String, x: Int, y: Int, z: Int) {
         tx {
             CrateAnchorsTable
@@ -381,6 +426,23 @@ class ExposedStorage(
         errorMessage = this[OpenOperationsTable.errorMessage],
         createdAt = Instant.ofEpochMilli(this[OpenOperationsTable.createdAtMillis]),
         updatedAt = Instant.ofEpochMilli(this[OpenOperationsTable.updatedAtMillis]),
+    )
+
+    private fun ResultRow.toOpenHistoryEntry() = OpenHistoryEntry(
+        crateId = this[OpenLogTable.crateId],
+        prizeId = this[OpenLogTable.prizeId],
+        prizeName = this[OpenLogTable.prizeName],
+        keyType = this[OpenLogTable.keyType].toKeyType(),
+        openedAt = Instant.ofEpochMilli(this[OpenLogTable.openedAtMillis]),
+    )
+
+    private fun ResultRow.toGlobalOpenHistoryEntry() = GlobalOpenHistoryEntry(
+        uuid = this[OpenLogTable.uuid],
+        crateId = this[OpenLogTable.crateId],
+        prizeId = this[OpenLogTable.prizeId],
+        prizeName = this[OpenLogTable.prizeName],
+        keyType = this[OpenLogTable.keyType].toKeyType(),
+        openedAt = Instant.ofEpochMilli(this[OpenLogTable.openedAtMillis]),
     )
 
     private val KeyType.serialized: String

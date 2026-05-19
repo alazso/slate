@@ -19,6 +19,8 @@ object MigrationRunner {
                     3 to "storage/migrations/V003__missing_core_tables_sqlite.sql",
                     4 to "storage/migrations/V004__open_operations_sqlite.sql",
                     5 to "storage/migrations/V005__open_operation_id_lengths_sqlite.sql",
+                    6 to "storage/migrations/V006__open_log_indexes_sqlite.sql",
+                    7 to "storage/migrations/V007__currency_sqlite.sql",
                 )
                 Dialect.Postgres -> listOf(
                     1 to "storage/migrations/V001__init_postgres.sql",
@@ -26,6 +28,8 @@ object MigrationRunner {
                     3 to "storage/migrations/V003__missing_core_tables_postgres.sql",
                     4 to "storage/migrations/V004__open_operations_postgres.sql",
                     5 to "storage/migrations/V005__open_operation_id_lengths_postgres.sql",
+                    6 to "storage/migrations/V006__open_log_indexes_postgres.sql",
+                    7 to "storage/migrations/V007__currency_postgres.sql",
                 )
             }
             migrations.filter { it.first > current }.forEach { migration ->

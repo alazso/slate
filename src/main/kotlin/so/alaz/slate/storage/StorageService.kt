@@ -30,6 +30,11 @@ interface StorageService {
     suspend fun appendOpenOperationStep(operationId: String, state: OpenOperationState, message: String? = null)
     suspend fun listRecentOpenOperations(limit: Int): List<OpenOperation>
     suspend fun listOpenHistory(uuid: UUID, limit: Int): List<OpenHistoryEntry>
+    suspend fun getLatestOpen(crateId: String): GlobalOpenHistoryEntry?
+    suspend fun getLatestOpen(uuid: UUID, crateId: String): OpenHistoryEntry?
+    suspend fun countTotalOpens(uuid: UUID): Int
+    suspend fun countTotalOpens(crateId: String): Int
+    suspend fun listRecentWinners(crateId: String, limit: Int): List<GlobalOpenHistoryEntry>
     suspend fun upsertCrateAnchor(crateId: String, worldKey: String, x: Int, y: Int, z: Int)
     suspend fun getCrateAnchor(worldKey: String, x: Int, y: Int, z: Int): CrateAnchor?
     suspend fun removeCrateAnchor(worldKey: String, x: Int, y: Int, z: Int): Boolean

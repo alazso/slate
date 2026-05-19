@@ -235,6 +235,38 @@ class ExposedStorageTest {
         }
     }
 
+    @Test
+    fun `latest open and aggregate counters are queryable`() = runTest {
+        val alpha = UUID.randomUUID()
+        val beta = UUID.randomUUID()
+        val storage = createStorage()
+        try {
+            storage.initialize()
+
+            storage.logOpen(alpha, "astral", "p1", "Astral Blade", KeyType.Virtual)
+            storage.logOpen(beta, "astral", "p2", "Astral Crown", KeyType.Physical)
+            storage.logOpen(alpha, "nebula", "p3", "Nebula Dust", KeyType.Virtual)
+
+            val latestAstral = storage.getLatestOpen("astral")
+            assertNotNull(latestAstral)
+            assertEquals(beta, latestAstral!!.uuid)
+            assertEquals("Astral Crown", latestAstral.prizeName)
+
+            val latestAlphaAstral = storage.getLatestOpen(alpha, "astral")
+            assertNotNull(latestAlphaAstral)
+            assertEquals("Astral Blade", latestAlphaAstral!!.prizeName)
+
+            assertEquals(2, storage.countTotalOpens(alpha))
+            assertEquals(2, storage.countTotalOpens("astral"))
+
+            val winners = storage.listRecentWinners("astral", 5)
+            assertEquals(2, winners.size)
+            assertEquals(beta, winners.first().uuid)
+        } finally {
+            storage.shutdown()
+        }
+    }
+
     private fun createPartiallyMigratedV1Database() {
         DriverManager.getConnection("jdbc:sqlite:${dbPath.toAbsolutePath()}").use { connection ->
             connection.autoCommit = false

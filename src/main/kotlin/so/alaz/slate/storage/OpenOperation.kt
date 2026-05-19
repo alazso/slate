@@ -48,3 +48,12 @@ data class OpenHistoryEntry(
     val keyType: KeyType,
     val openedAt: Instant,
 )
+
+data class GlobalOpenHistoryEntry(
+    val uuid: UUID,
+    val crateId: String,
+    val prizeId: String,
+    val prizeName: String,
+    val keyType: KeyType,
+    val openedAt: Instant,
+)
