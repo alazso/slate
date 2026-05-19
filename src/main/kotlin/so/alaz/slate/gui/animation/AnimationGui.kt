@@ -53,38 +53,18 @@ class AnimationGui(
         val step = template.tickInterval.coerceAtLeast(1)
         var tick = 0
         var revealPlayed = false
-        while (tick <= template.totalTicks) {
+        while (tick < template.totalTicks) {
             if (!player.isOnline) break
-            if (forceCompleteRequests[session.sessionId] == true) break
-            val state = when {
-                tick < template.totalTicks / 2 -> AnimationState.SPINNING
-                tick < template.totalTicks - 5 -> AnimationState.SLOWING
-                tick < template.totalTicks -> AnimationState.REVEALING
-                else -> AnimationState.COMPLETE
+            if (forceCompleteRequests.remove(session.sessionId) == true) {
+                tick = template.totalTicks
+                break
             }
-            stateBySession[session.sessionId] = state
-            val frame = template.frame(tick, prize, decoys)
-            frame.slotItems.forEach { (slotIndex, item) ->
-                runGlobal(scheduler) {
-                    session.inventory.setItem(slotIndex, item)
-                }
-            }
-            val soundName = when {
-                frame.sound != null -> frame.sound
-                state == AnimationState.REVEALING || state == AnimationState.COMPLETE -> {
-                    if (!revealPlayed) {
-                        revealPlayed = true
-                        revealSound
-                    } else {
-                        null
-                    }
-                }
-                else -> tickSound
-            }
-            playSoundIfPresent(player, scheduler, soundName)
-            if (state == AnimationState.COMPLETE) break
+            revealPlayed = renderTick(player, session, scheduler, tick, revealPlayed)
             waitTicks(scheduler, step.toLong())
-            tick += step
+            tick = (tick + step).coerceAtMost(template.totalTicks)
+        }
+        if (player.isOnline) {
+            revealPlayed = renderTick(player, session, scheduler, template.totalTicks, revealPlayed)
         }
         stateBySession[session.sessionId] = AnimationState.COMPLETE
         if (!revealPlayed) {
@@ -104,6 +84,39 @@ class AnimationGui(
         runGlobal(scheduler) {
             player.playSound(player.location, sound, 1.0f, 1.0f)
         }
+    }
+
+    private suspend fun renderTick(
+        player: Player,
+        session: GuiSession,
+        scheduler: PlatformScheduler,
+        tick: Int,
+        revealPlayed: Boolean,
+    ): Boolean {
+        val state = stateForTick(tick)
+        stateBySession[session.sessionId] = state
+        val frame = template.frame(tick, prize, decoys)
+        frame.slotItems.forEach { (slotIndex, item) ->
+            runGlobal(scheduler) {
+                session.inventory.setItem(slotIndex, item)
+            }
+        }
+        val shouldReveal = state == AnimationState.REVEALING || state == AnimationState.COMPLETE
+        val soundName = when {
+            frame.sound != null -> frame.sound
+            shouldReveal && !revealPlayed -> revealSound
+            shouldReveal -> null
+            else -> tickSound
+        }
+        playSoundIfPresent(player, scheduler, soundName)
+        return revealPlayed || (shouldReveal && revealSound != null)
+    }
+
+    private fun stateForTick(tick: Int): AnimationState = when {
+        tick < template.totalTicks / 2 -> AnimationState.SPINNING
+        tick < template.totalTicks - 5 -> AnimationState.SLOWING
+        tick < template.totalTicks -> AnimationState.REVEALING
+        else -> AnimationState.COMPLETE
     }
 
     private suspend fun waitTicks(scheduler: PlatformScheduler, ticks: Long) {

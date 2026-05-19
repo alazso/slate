@@ -6,14 +6,15 @@ import so.alaz.slate.crate.Prize
 import so.alaz.slate.probability.ChanceFormatter
 import so.alaz.slate.probability.ProbabilityEngine
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.item.ItemFactory
+import so.alaz.slate.item.visualStackForPrizeItem
 import so.alaz.slate.util.ComponentUtil
 
 object PreviewItemBuilder {
     fun build(crate: CrateDefinition, prize: Prize): ItemStack {
-        val material = prize.items.firstOrNull()?.material
-            ?.let(Material::matchMaterial)
-            ?: Material.CHEST
-        val item = ItemStack(material)
+        val item = prize.items.firstOrNull()
+            ?.let { ItemFactory.visualStackForPrizeItem(it, Material.CHEST) }
+            ?: ItemStack(Material.CHEST)
         val table = ProbabilityEngine().buildTable(crate)
         val row = table.rows.firstOrNull { it.prize.id == prize.id }
         item.editMeta { meta ->
