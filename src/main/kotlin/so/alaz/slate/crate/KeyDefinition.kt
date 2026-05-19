@@ -13,18 +13,20 @@ data class KeyDefinition(
     val glowing: Boolean,
 )
 
-enum class KeyProvider {
-    Vanilla,
-    Nexo,
-    CraftEngine,
+enum class KeyProvider(
+    val providerId: String,
+) {
+    Vanilla("vanilla"),
+    Nexo("nexo"),
+    CraftEngine("craftengine"),
+    ItemsAdder("itemsadder"),
     ;
 
     companion object {
-        fun parse(raw: String?): KeyProvider? = when (raw?.trim()?.lowercase()) {
-            null, "", "vanilla" -> Vanilla
-            "nexo" -> Nexo
-            "craftengine" -> CraftEngine
-            else -> null
+        fun parse(raw: String?): KeyProvider? {
+            val normalized = raw?.trim()?.lowercase()
+            if (normalized.isNullOrBlank()) return Vanilla
+            return entries.firstOrNull { it.providerId == normalized }
         }
     }
 }
