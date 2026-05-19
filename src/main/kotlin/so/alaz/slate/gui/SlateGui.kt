@@ -91,6 +91,38 @@ abstract class SlateGui(
         fillInventory(player, inventory, scheduler)
     }
 
+    /**
+     * Clears the current slot map and reruns [onBeforeOpen] so the GUI reflects
+     * the latest local state and backing data. The framework calls [refresh] after
+     * the click pipeline returns, so callers that mutate state inside [onClick]
+     * should simply invoke this and let the automatic refresh redraw the inventory.
+     */
+    protected suspend fun rebuild(player: Player) {
+        clearSlots()
+        onBeforeOpen(player)
+    }
+
+    /**
+     * Rebuilds the slot map and immediately pushes the new layout to [inventory].
+     * Use this from asynchronous callbacks (post-claim, post-mutation completions)
+     * that fire outside the click pipeline and therefore miss the framework's
+     * automatic refresh.
+     */
+    suspend fun rebuildAndRefresh(
+        player: Player,
+        scheduler: PlatformScheduler,
+        inventory: Inventory,
+    ) {
+        rebuild(player)
+        refresh(player, scheduler, inventory)
+    }
+
+    protected fun clearSlots() {
+        for (index in slotMap.indices) {
+            slotMap[index] = null
+        }
+    }
+
     suspend fun applyAnimatedFrame(
         player: Player,
         session: GuiSession,
