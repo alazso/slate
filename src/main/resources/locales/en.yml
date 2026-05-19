@@ -53,6 +53,7 @@ messages:
         missing_permission: "<yellow>You are missing permission to open this crate.</yellow>"
         region_restricted: "<yellow>You can't open this crate from this region.</yellow>"
         worldguard_unavailable: "<yellow>Region checks are enabled, but WorldGuard is unavailable.</yellow>"
+        insufficient_currency: "<yellow>You don't have enough currency to open this crate.</yellow>"
         cancelled_by_event: "<yellow>The crate opening was cancelled.</yellow>"
         delivery_failed: "<yellow>The reward could not be delivered. It has been queued for recovery.</yellow>"
 
@@ -69,6 +70,8 @@ messages:
       look_at_block: "<red>Look at a nearby block (within 6 blocks).</red>"
       look_at_anchored: "<red>Look at an anchored block (within 6 blocks).</red>"
       break_denied: "<red>This block is a crate anchor for '{crate}' and can't be broken.</red>"
+      break_confirm_required: "<yellow>Anchor break safeguard:</yellow> <gray>break this same block again within {seconds}s to confirm removal for '{crate}'.</gray>"
+      break_removed: "<green>Anchor removed from broken block.</green> <gray>Crate: {crate}</gray>"
       unknown_target: "<red>This anchor points to unknown crate '{crate}'.</red>"
       tp_not_found: "<yellow>No anchor found for '{crate}'.</yellow>"
       tp_world_unloaded: "<red>Anchor world is not loaded:</red> <gray>{world}</gray>"
@@ -95,6 +98,23 @@ messages:
       operation_failed: "<red>Key {operation} failed.</red> <gray>{error}</gray>"
       clear_confirm_required: "<red>Safety check: add --confirm to run this command.</red>"
       virtual_received: "<green>Received {amount} virtual key(s) for {crate}.</green>"
+
+    currency:
+      unknown_provider: "<red>Unknown currency provider '{provider}'.</red>"
+      unknown_currency: "<red>Unknown currency '{currency}'.</red>"
+      invalid_amount: "<red>Amount is invalid.</red>"
+      invalid_target: "<red>Couldn't resolve that target player or UUID.</red>"
+      balance_result: "<green>{player}</green> <gray>{currency} balance:</gray> <yellow>{balance}</yellow>"
+      give_success: "<green>Granted {amount} {currency} to {player}.</green>"
+      take_success: "<green>Removed {amount} {currency} from {player}.</green>"
+      set_success: "<green>Set {currency} for {player} to {amount}.</green>"
+      insufficient_funds: "<yellow>Insufficient funds for this operation.</yellow>"
+      provider_unavailable: "<red>Provider '{provider}' is unavailable.</red>"
+      transaction_failed: "<red>Currency transaction failed:</red> <gray>{error}</gray>"
+      history_empty: "<yellow>No currency transactions found.</yellow>"
+      history_line: "<gray>{id}</gray> <dark_gray>|</dark_gray> <gray>{type}</gray> <dark_gray>|</dark_gray> <gray>{currency}</gray> <dark_gray>|</dark_gray> <gray>{amount}</gray> <dark_gray>|</dark_gray> <gray>{status}</gray>"
+      provider_list: "<green>Currency providers:</green> <gray>{providers}</gray>"
+      currency_list: "<green>Currencies:</green> <gray>{currencies}</gray>"
 
     player_keys:
       total: "<green>Your virtual keys: {total}</green> <dark_gray>|</dark_gray> <gray>{body}</gray>"
@@ -204,6 +224,393 @@ messages:
       eligibility_permission: "<gray>permission={permission} worldAllowed={worldAllowed}</gray>"
       eligibility_keys: "<gray>virtualKeys={virtualKeys} hasVirtual={hasVirtual} hasPhysical={hasPhysical}</gray>"
       eligibility_opens: "<gray>opens={opens} maxPulls={maxPulls} pity={pity} cooldown={cooldown}</gray>"
+
+  gui:
+    common:
+      back:
+        name: "<gray>Back</gray>"
+        lore: "<dark_gray>Click to return</dark_gray>"
+      close:
+        name: "<red>Close</red>"
+        lore: "<dark_gray>Click to close the menu</dark_gray>"
+      prev:
+        name: "<gray>Previous Page</gray>"
+        lore: "<dark_gray>Click to view the previous page</dark_gray>"
+      next:
+        name: "<gray>Next Page</gray>"
+        lore: "<dark_gray>Click to view the next page</dark_gray>"
+      page_indicator:
+        name: "<gray>Page {page}/{total}</gray>"
+        lore: "<dark_gray>{count} entries</dark_gray>"
+      no_data: "<gray>Nothing to show.</gray>"
+      denied_hotbar: "<red>You can't do that right now.</red>"
+
+    menu:
+      title: "<gold>Crates</gold>"
+      head:
+        name: "<gold>{player}</gold>"
+        lore: "<gray>Virtual keys:</gray> <yellow>{totalKeys}</yellow>\n<gray>Lifetime opens:</gray> <yellow>{lifetimeOpens}</yellow>\n<gray>Pending claims:</gray> <yellow>{pendingCount}</yellow>"
+      keys:
+        name: "<gold>My Keys</gold>"
+        lore: "<gray>You hold</gray> <yellow>{totalKeys}</yellow> <gray>virtual key(s)</gray>\n<dark_gray>Click to manage</dark_gray>"
+      history:
+        name: "<aqua>Open History</aqua>"
+        lore: "<gray>Lifetime opens:</gray> <yellow>{lifetimeOpens}</yellow>\n<dark_gray>Click to browse</dark_gray>"
+      claims:
+        name: "<yellow>Pending Claims</yellow>"
+        lore: "<gray>Pending rewards:</gray> <yellow>{pendingCount}</yellow>\n<dark_gray>Click to claim</dark_gray>"
+      pity:
+        name: "<light_purple>Pity Progress</light_purple>"
+        lore: "<gray>Closest pity:</gray> <yellow>{closestSummary}</yellow>\n<dark_gray>Click to view all</dark_gray>"
+      tile:
+        name: "<gold>{name}</gold>"
+        lore_ready: "<gray>{status}</gray>\n<gray>Keys:</gray> <green>{availableKeys}</green><gray>/</gray><yellow>{requiredKeys}</yellow>\n<gray>{costSummary}</gray>\n<dark_gray>Click to view details</dark_gray>"
+        lore_blocked: "<gray>{status}</gray>\n<red>{blockedReason}</red>\n<gray>Keys:</gray> <yellow>{availableKeys}</yellow><gray>/</gray><yellow>{requiredKeys}</yellow>\n<gray>{costSummary}</gray>\n<dark_gray>Click to view details</dark_gray>"
+        lore_insufficient: "<gray>{status}</gray>\n<red>Need {requiredKeys} key(s), have {availableKeys}</red>\n<gray>{costSummary}</gray>\n<dark_gray>Click to view details</dark_gray>"
+        status_active: "<green>Active</green>"
+        status_disabled: "<dark_gray>Disabled</dark_gray>"
+        status_archived: "<dark_gray>Archived</dark_gray>"
+        status_seasonal: "<aqua>Seasonal</aqua>"
+        status_out_of_season: "<dark_aqua>Out of season</dark_aqua>"
+        status_cooldown: "<yellow>Cooldown {remaining}</yellow>"
+        key_line_ready: "<gray>Keys:</gray> <green>{available}</green><gray>/{required}</gray>"
+        key_line_short: "<gray>Keys:</gray> <red>{available}</red><gray>/{required}</gray>"
+        cost_line: "<gray>Cost:</gray> <yellow>{costs}</yellow>"
+        requires_permission: "<red>Requires permission</red>"
+        requires_region: "<red>Requires region</red>"
+
+    crate_detail:
+      title: "<gold>{name}</gold>"
+      preview:
+        name: "<aqua>Preview Rewards</aqua>"
+        lore: "<gray>Browse every reward and its drop chance.</gray>\n<dark_gray>Click to open preview</dark_gray>"
+      locate:
+        name: "<yellow>Locate Anchor</yellow>"
+        lore: "<gray>{location}</gray>\n<dark_gray>Click to teleport</dark_gray>"
+        none: "<gray>No anchor in this world.</gray>"
+      stats:
+        name: "<aqua>My Stats</aqua>"
+        lore: "<gray>Opens:</gray> <yellow>{lifetimeOpens}</yellow>\n<gray>Last opened:</gray> <yellow>{lastOpened}</yellow>\n<gray>Pity:</gray> <yellow>{pityProgress}</yellow>"
+      open_ready:
+        name: "<green>Open Crate</green>"
+        lore: "<gray>Keys:</gray> <green>{availableKeys}</green><gray>/</gray><yellow>{requiredKeys}</yellow>\n<gray>{costSummary}</gray>\n<dark_gray>Click to open one</dark_gray>"
+      open_blocked:
+        name: "<red>Cannot Open</red>"
+        lore: "<red>{reason}</red>\n<gray>Keys:</gray> <yellow>{availableKeys}</yellow><gray>/{requiredKeys}</yellow>\n<gray>{costSummary}</gray>"
+      bulk:
+        name: "<gold>Bulk Open</gold>"
+        lore: "<gray>Choose how many crates to open at once.</gray>\n<dark_gray>Click to open the bulk menu</dark_gray>"
+      tier_header: "<aqua>Tier Previews</aqua>"
+      tier_tile:
+        name: "<{tierColor}>{tierName}</{tierColor}>"
+        lore: "<gray>Drop chance:</gray> <yellow>{tierChance}</yellow>\n<gray>Rewards in tier:</gray> <yellow>{rewardCount}</yellow>"
+      open_ready_hotbar: "<green>Opening {crate}...</green>"
+
+    preview:
+      title: "<gold>{name} Preview</gold>"
+      header:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>Mode:</gray> <yellow>{mode}</yellow>\n<gray>Layout:</gray> <yellow>{structure}</yellow>\n<gray>Rewards:</gray> <yellow>{count}</yellow>"
+      sort:
+        name: "<yellow>Sort: {mode}</yellow>"
+        lore: "<dark_gray>Click to cycle sort mode</dark_gray>"
+        mode:
+          weight: "Weight (High → Low)"
+          tier: "Tier"
+          alpha: "Alphabetical"
+          chance: "Chance (Low → High)"
+      filter:
+        name: "<yellow>Filter: {tier}</yellow>"
+        lore: "<dark_gray>Click to cycle tier filter</dark_gray>"
+        all: "All tiers"
+        overflow_name: "<yellow>More tiers...</yellow>"
+        overflow_lore: "<gray>Click to cycle through additional tiers.</gray>"
+      reward:
+        lore_base: "<gray>Chance:</gray> <yellow>{chance}</yellow>\n<gray>Weight:</gray> <yellow>{weight}</yellow>"
+        lore_tier: "<gray>Tier:</gray> <yellow>{tier}</yellow>"
+        lore_pity: "<light_purple>Pity guaranteed at {requiredOpens}</light_purple>"
+        lore_broadcast: "<gold>Broadcasts on win</gold>"
+
+    wallet:
+      title: "<gold>Key Wallet</gold>"
+      head:
+        name: "<gold>{player}</gold>"
+        lore: "<gray>Total virtual keys:</gray> <yellow>{totalKeys}</yellow>\n<gray>Crates with keys:</gray> <yellow>{withKeys}</yellow>"
+      entry:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>Virtual keys:</gray> <yellow>{amount}</yellow>\n<gray>Opens available:</gray> <yellow>{opensAvailable}</yellow>\n<dark_gray>Click to open detail</dark_gray>"
+      filter:
+        name: "<yellow>Showing: {mode}</yellow>"
+        lore: "<dark_gray>Click to toggle</dark_gray>"
+        mode_all: "All crates"
+        mode_owned: "With keys only"
+      physical:
+        name: "<aqua>Physical Keys</aqua>"
+        lore: "<gray>Physical keys live in your inventory.</gray>\n<gray>Hold one and right-click an anchor.</gray>"
+
+    pity:
+      title: "<gold>Pity Progress</gold>"
+      info:
+        name: "<light_purple>What is pity?</light_purple>"
+        lore: "<gray>After enough opens without a top-tier prize,</gray>\n<gray>the next open guarantees one.</gray>"
+      entry:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>Progress:</gray> <yellow>{current}</yellow><gray>/{required}</gray>\n<gray>{progressBar}</gray>\n<gray>Guaranteed tier:</gray> <yellow>{guaranteedTier}</yellow>"
+        lore_near_guarantee: "<light_purple>{remaining} more opens until guarantee</light_purple>"
+      empty:
+        name: "<gray>No pity crates loaded</gray>"
+        lore: "<gray>Pity progress will appear here once crates support it.</gray>"
+
+    history:
+      title: "<gold>Open History</gold>"
+      entry:
+        name: "<gold>{prize}</gold>"
+        lore: "<gray>Crate:</gray> <yellow>{crate}</yellow>\n<gray>Tier:</gray> <yellow>{tier}</yellow>\n<gray>Key:</gray> <yellow>{keyType}</yellow>\n<gray>When:</gray> <yellow>{when}</yellow>"
+      filter:
+        name: "<yellow>Crate filter: {crate}</yellow>"
+        lore: "<dark_gray>Click to cycle crates</dark_gray>"
+        all: "All crates"
+      empty:
+        name: "<gray>No history yet</gray>"
+        lore: "<gray>Open a crate and your history will appear here.</gray>"
+
+    pending:
+      title: "<gold>Pending Claims</gold>"
+      entry:
+        name: "<gold>{prize}</gold>"
+        lore: "<gray>Crate:</gray> <yellow>{crate}</yellow>\n<gray>Queued:</gray> <yellow>{when}</yellow>"
+      claim:
+        name: "<green>Claim All</green>"
+        lore: "<gray>Attempts:</gray> <yellow>{count}</yellow>\n<dark_gray>Click to claim</dark_gray>"
+      empty:
+        name: "<gray>Nothing pending</gray>"
+        lore: "<gray>Rewards queue here if your inventory fills up.</gray>"
+
+    bulk:
+      title: "<gold>Bulk Open: {name}</gold>"
+      head:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>Per-open cost:</gray> <yellow>{singleCost}</yellow>\n<gray>You can afford:</gray> <green>{maxAffordable}</green>"
+      amount:
+        ready_name: "<green>Open x{amount}</green>"
+        ready_lore: "<gray>Keys needed:</gray> <yellow>{keys}</yellow>\n<gray>Total cost:</gray> <yellow>{cost}</yellow>\n<dark_gray>Click to confirm</dark_gray>"
+        blocked_name: "<dark_gray>Open x{amount}</dark_gray>"
+        blocked_lore: "<red>{reason}</red>\n<gray>Keys needed:</gray> <yellow>{keys}</yellow>\n<gray>Total cost:</gray> <yellow>{cost}</yellow>"
+      max:
+        name: "<gold>Open MAX (x{amount})</gold>"
+        lore: "<gray>Spends every available resource.</gray>\n<gray>Total cost:</gray> <yellow>{cost}</yellow>\n<dark_gray>Click to confirm</dark_gray>"
+
+    admin:
+      title: "<gold>Slate Admin</gold>"
+      header:
+        name: "<gold>Slate</gold>"
+        lore: "<gray>Loaded crates:</gray> <yellow>{crateCount}</yellow>\n<gray>Online players:</gray> <yellow>{onlineCount}</yellow>\n<gray>Debug:</gray> <yellow>{debug}</yellow>"
+      crate_manager:
+        name: "<gold>Crate Manager</gold>"
+        lore: "<gray>Browse, edit, clone or delete crates.</gray>\n<dark_gray>Click to open</dark_gray>"
+      key_manager:
+        name: "<yellow>Key Manager</yellow>"
+        lore: "<gray>Give, take, set or clear keys.</gray>\n<dark_gray>Click to open</dark_gray>"
+      currency_manager:
+        name: "<yellow>Currency Manager</yellow>"
+        lore: "<gray>Adjust currency balances.</gray>\n<dark_gray>Click to open</dark_gray>"
+      anchor_manager:
+        name: "<aqua>Anchor Manager</aqua>"
+        lore: "<gray>Browse, teleport to, or remove anchors.</gray>\n<dark_gray>Click to open</dark_gray>"
+      health:
+        name: "<green>Health Snapshot</green>"
+        lore: "<gray>Loaded crates:</gray> <yellow>{crateCount}</yellow>\n<gray>Debug:</gray> <yellow>{debug}</yellow>"
+      debug:
+        name: "<gold>Debug</gold>"
+        lore: "<gray>Run /sla debug for the full toolkit.</gray>"
+      reload:
+        name: "<yellow>Reload</yellow>"
+        lore: "<gray>Reloads config, locales and crate files.</gray>\n<dark_gray>Click to reload</dark_gray>"
+        result: "<green>Reload complete.</green> <gray>Updated: {updated} | Failed: {failed}</gray>"
+      backup:
+        name: "<aqua>Create Backup</aqua>"
+        lore: "<gray>Snapshots the SQLite database to /backups.</gray>\n<dark_gray>Click to back up</dark_gray>"
+        result: "<green>Backup created:</green> <gray>{file}</gray>"
+
+    crate_manager:
+      title: "<gold>Crate Manager</gold>"
+      tile:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>ID:</gray> <yellow>{id}</yellow>\n<gray>State:</gray> <yellow>{state}</yellow>\n<gray>Rewards:</gray> <yellow>{rewards}</yellow>\n<dark_gray>Left-click: edit | Right-click: clone | Shift-Right-click: delete</dark_gray>"
+      create:
+        name: "<green>Create Crate</green>"
+        lore: "<gray>Prompts for an id, then writes a stub.</gray>"
+      validate:
+        name: "<aqua>Validate All</aqua>"
+        lore: "<gray>Runs validation across every loaded crate.</gray>"
+        result_ok: "<green>All {count} crate(s) passed validation.</green>"
+        result_fail: "<red>Validation failed for {fail}/{count} crate(s).</red>"
+
+    key_manager:
+      title: "<gold>Key Manager</gold>"
+      player:
+        name: "<yellow>Player: {player}</yellow>"
+        lore: "<gray>Click to enter player name in chat.</gray>"
+      crate:
+        name: "<yellow>Crate: {crate}</yellow>"
+        lore: "<gray>Click to cycle through loaded crates.</gray>"
+      give:
+        name: "<green>Give Keys</green>"
+        lore: "<gray>Click then type an amount.</gray>"
+      take:
+        name: "<yellow>Take Keys</yellow>"
+        lore: "<gray>Click then type an amount.</gray>"
+      set:
+        name: "<gold>Set Keys</gold>"
+        lore: "<gray>Click then type an amount.</gray>"
+      clear:
+        name: "<red>Clear Keys</red>"
+        lore: "<gray>Clears all keys for the selected player+crate.</gray>"
+      balance:
+        name: "<aqua>Balance</aqua>"
+        lore: "<gray>{player} on {crate}</gray>\n<yellow>{amount}</yellow> virtual key(s)"
+      result: "<green>{action}:</green> <gray>{result}</gray>"
+
+    currency_manager:
+      title: "<gold>Currency Manager</gold>"
+      provider:
+        name: "<yellow>Provider: {provider}</yellow>"
+        lore: "<gray>Click to cycle providers.</gray>"
+      currency:
+        name: "<yellow>Currency: {currency}</yellow>"
+        lore: "<gray>Click to cycle currencies.</gray>"
+      player:
+        name: "<yellow>Player: {player}</yellow>"
+        lore: "<gray>Click to enter player name in chat.</gray>"
+      give:
+        name: "<green>Give Currency</green>"
+        lore: "<gray>Click then type an amount.</gray>"
+      take:
+        name: "<yellow>Take Currency</yellow>"
+        lore: "<gray>Click then type an amount.</gray>"
+      set:
+        name: "<gold>Set Balance</gold>"
+        lore: "<gray>Click then type an amount.</gray>"
+      balance:
+        name: "<aqua>Balance</aqua>"
+        lore: "<gray>{player}'s {currency} on {provider}</gray>\n<yellow>{balance}</yellow>"
+      result: "<green>{action}:</green> <gray>{result}</gray>"
+      no_provider:
+        name: "<red>No economy providers</red>"
+        lore: "<gray>Install Vault/an economy plugin or enable the Ledger provider in config.yml.</gray>"
+      no_currency:
+        name: "<red>No currencies for {provider}</red>"
+        lore: "<gray>Define currencies for the provider before using this panel.</gray>"
+
+    anchor_manager:
+      title: "<gold>Anchor Manager</gold>"
+      tile:
+        name: "<gold>{crate}</gold>"
+        lore: "<gray>World:</gray> <yellow>{world}</yellow>\n<gray>Location:</gray> <yellow>{x}, {y}, {z}</yellow>\n<dark_gray>Left-click: teleport | Shift-Right-click: remove</dark_gray>"
+      refresh:
+        name: "<aqua>Refresh Anchors</aqua>"
+        lore: "<gray>Reloads the anchor cache and displays.</gray>"
+        result: "<green>Anchor cache refreshed:</green> <gray>{count}</gray>"
+      empty:
+        name: "<gray>No anchors</gray>"
+        lore: "<gray>Use /sla anchor set [crate] while looking at a block.</gray>"
+      tp_hotbar: "<green>Teleported to anchor for {crate}.</green>"
+      remove_hotbar: "<green>Removed anchor for {crate}.</green>"
+
+    editor:
+      title: "<gold>{crate} Editor</gold>"
+      tab:
+        general:
+          name: "<gold>General</gold>"
+          lore: "<gray>Name, lifecycle, cooldown, max pulls.</gray>"
+        costs:
+          name: "<yellow>Costs</yellow>"
+          lore: "<gray>Required keys and currency costs.</gray>"
+        eligibility:
+          name: "<aqua>Eligibility</aqua>"
+          lore: "<gray>Permissions, regions, allowed worlds.</gray>"
+        animation:
+          name: "<light_purple>Animation</light_purple>"
+          lore: "<gray>Animation type, duration, decoys, sounds.</gray>"
+        rewards:
+          name: "<gold>Rewards</gold>"
+          lore: "<gray>Manage the reward pool.</gray>"
+        preview:
+          name: "<aqua>Preview</aqua>"
+          lore: "<gray>Open the player-facing preview.</gray>"
+      save:
+        name: "<green>Save</green>"
+        lore: "<gray>Persist all pending changes.</gray>"
+      discard:
+        name: "<red>Discard</red>"
+        lore: "<gray>Drop unsaved changes.</gray>"
+      simulate:
+        name: "<aqua>Simulate</aqua>"
+        lore: "<gray>Run /sla crate sim using current values.</gray>"
+      chances:
+        name: "<yellow>Chances</yellow>"
+        lore: "<gray>Open the chances breakdown.</gray>"
+      back:
+        name: "<gray>Back</gray>"
+        lore: "<dark_gray>Return to Crate Manager</dark_gray>"
+      prompt:
+        timeout: "<gray>Input cancelled or timed out.</gray>"
+      mutation:
+        failed: "<red>Mutation failed:</red> <gray>{error}</gray>"
+      saved: "<green>Changes saved.</green>"
+      discarded: "<gray>Changes discarded.</gray>"
+      no_changes: "<gray>Nothing to save.</gray>"
+      save_ok: "<green>Saved & reloaded {crate}.</green>"
+      discard_ok: "<gray>Discarded edits for {crate}.</gray>"
+      header:
+        name: "<gold>{name}</gold> <dark_gray>({id})</dark_gray>"
+        lore: "<gray>State:</gray> <yellow>{state}</yellow>\n<gray>Tiers:</gray> <yellow>{tiers}</yellow>\n<gray>Rewards:</gray> <yellow>{rewards}</yellow>\n<gray>Costs:</gray> <yellow>{costs}</yellow>"
+      tab:
+        name: "<aqua>{tab}</aqua>"
+        lore: "<gray>Click to switch tab.</gray>"
+      field:
+        name: "<yellow>{label}:</yellow> <white>{value}</white>"
+        lore: "<dark_gray>Click to edit</dark_gray>"
+      summary:
+        lore: "<dark_gray>Read-only</dark_gray>"
+      open_dedicated:
+        name: "<aqua>{label}</aqua>"
+        lore: "<gray>Opens a focused editor screen.</gray>"
+      empty:
+        name: "<gray>{text}</gray>"
+      cost:
+        name: "<gold>{provider}:{currency}</gold>"
+        lore: "<gray>Amount:</gray> <yellow>{amount}</yellow>\n<dark_gray>Left-click: edit | Shift-Right-click: remove</dark_gray>"
+      reward:
+        name: "<gold>{name}</gold>"
+        lore: "<gray>Tier:</gray> <yellow>{tier}</yellow>\n<gray>Weight:</gray> <yellow>{weight}</yellow>"
+
+    reward_editor:
+      title: "<gold>Reward Editor</gold> <dark_gray>({crate})</dark_gray>"
+      header:
+        name: "<gold>{name}</gold> <dark_gray>({id})</dark_gray>"
+        lore: "<gray>Tier:</gray> <yellow>{tier}</yellow>\n<gray>Weight:</gray> <yellow>{weight}</yellow>\n<gray>Items:</gray> <yellow>{items}</yellow>\n<gray>Commands:</gray> <yellow>{commands}</yellow>\n<gray>Messages:</gray> <yellow>{messages}</yellow>\n<gray>Dirty:</gray> <yellow>{dirty}</yellow>"
+      action:
+        name: "<yellow>{label}</yellow>"
+      item:
+        lore: "<dark_gray>Slot:</dark_gray> <yellow>{index}</yellow>\n<dark_gray>Shift-Right-click to remove</dark_gray>"
+      command:
+        name: "<aqua>/{command}</aqua>"
+        lore: "<dark_gray>Slot:</dark_gray> <yellow>{index}</yellow>\n<dark_gray>Shift-Right-click to remove</dark_gray>"
+      message:
+        name: "<gray>{message}</gray>"
+        lore: "<dark_gray>Slot:</dark_gray> <yellow>{index}</yellow>\n<dark_gray>Shift-Right-click to remove</dark_gray>"
+      grant:
+        name: "<gold>Currency Grants</gold>"
+        lore: "<gray>Use the YAML <yellow>prizes.{id}.grants:</yellow> list for currency grants.</gray>"
+      add_item_lore: "<gray>Adds your held item to this reward.</gray>"
+      add_command_lore: "<gray>Click then type a command (no slash).</gray>"
+      add_message_lore: "<gray>Click then type a message line.</gray>"
+      add_grant_lore: "<gray>Currently configured via YAML.</gray>"
+      add_reward_lore: "<gray>Click then enter a new reward id.</gray>"
+      delete_lore: "<gray>Shift-click to delete this reward.</gray>"
+      save_lore: "<gray>Writes draft to YAML and reloads.</gray>"
+      save_ok: "<green>Reward saved & reloaded ({crate}).</green>"
 
   hotbar: {}
   title: {}
