@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
+import org.bukkit.World
 import org.bukkit.entity.Display
 import org.bukkit.entity.Entity
 import org.bukkit.entity.ItemDisplay
@@ -19,6 +20,7 @@ import org.joml.Vector3f
 import so.alaz.slate.SlateKeys
 import so.alaz.slate.crate.CrateManager
 import so.alaz.slate.crate.anchor.AnchorService
+import so.alaz.slate.crate.anchor.CrateAnchor
 import so.alaz.slate.scheduler.PlatformScheduler
 import so.alaz.slate.util.ComponentUtil
 import so.alaz.slate.util.LogUtil
@@ -31,6 +33,7 @@ class DisplayService(
     private val pluginScope: CoroutineScope,
 ) {
     private val groups = ConcurrentHashMap<UUID, DisplayGroup>()
+    private val anchorDisplayGroups = ConcurrentHashMap<AnchorDisplayKey, UUID>()
     private val displayEntitiesAvailable = displayClassAvailable("org.bukkit.entity.TextDisplay") &&
         displayClassAvailable("org.bukkit.entity.ItemDisplay")
 
@@ -85,6 +88,7 @@ class DisplayService(
 
     fun removeDisplayGroup(groupId: UUID) {
         val group = groups.remove(groupId) ?: return
+        anchorKeyForGroup(group)?.let { anchorDisplayGroups.remove(it, group.id) }
         scheduler.runAtLocation(group.baseLocation) {
             group.entityUuids.forEach { entityId ->
                 val entity = Bukkit.getEntity(entityId)
@@ -113,21 +117,57 @@ class DisplayService(
 
     fun removeAllOwnedDisplays() {
         groups.keys.toList().forEach(::removeDisplayGroup)
+        anchorDisplayGroups.clear()
         cleanupAllStaleDisplays()
+    }
+
+    fun removeAllOwnedDisplaysImmediate() {
+        groups.keys.toList().forEach(::removeDisplayGroupImmediate)
+        anchorDisplayGroups.clear()
+        cleanupAllStaleDisplaysImmediate()
     }
 
     fun reloadDisplays() {
         removeAllOwnedDisplays()
+        reconcileAllAnchors()
+    }
+
+    fun reconcileAllAnchors() {
         pluginScope.launch {
             val anchors = anchorService.allAnchors()
             scheduler.runGlobal {
                 anchors.forEach { anchor ->
-                    val crate = crateManager.byId(anchor.crateId) ?: return@forEach
-                    val worldKey = NamespacedKey.fromString(anchor.worldKey)
-                    val world = worldKey?.let(Bukkit::getWorld) ?: return@forEach
-                    val base = Location(world, anchor.x + 0.5, anchor.y + 0.5, anchor.z + 0.5)
-                    val spec = factory.crateDisplay(crate, base) ?: return@forEach
-                    createDisplayGroup(spec)
+                    ensureAnchorDisplay(anchor)
+                }
+            }
+        }
+    }
+
+    fun reconcileWorld(world: World) {
+        pluginScope.launch {
+            val worldKey = world.key.asString()
+            val anchors = anchorService.allAnchors().filter { it.worldKey == worldKey }
+            scheduler.runGlobal {
+                anchors.forEach { anchor ->
+                    ensureAnchorDisplay(anchor)
+                }
+            }
+        }
+    }
+
+    fun reconcileChunk(
+        world: World,
+        chunkX: Int,
+        chunkZ: Int,
+    ) {
+        pluginScope.launch {
+            val worldKey = world.key.asString()
+            val anchors = anchorService.allAnchors().filter { anchor ->
+                anchor.worldKey == worldKey && (anchor.x shr 4) == chunkX && (anchor.z shr 4) == chunkZ
+            }
+            scheduler.runGlobal {
+                anchors.forEach { anchor ->
+                    ensureAnchorDisplay(anchor)
                 }
             }
         }
@@ -160,6 +200,16 @@ class DisplayService(
         }
     }
 
+    fun cleanupAllStaleDisplaysImmediate() {
+        Bukkit.getWorlds().forEach { world ->
+            world.loadedChunks.forEach { chunk ->
+                chunk.entities
+                    .filter { isOwnedDisplay(it) }
+                    .forEach { it.remove() }
+            }
+        }
+    }
+
     private fun teleportDisplayGroup(groupId: UUID, location: Location) {
         val group = groups[groupId] ?: return
         scheduler.runAtLocation(group.baseLocation) {
@@ -172,6 +222,18 @@ class DisplayService(
         }
     }
 
+    private fun removeDisplayGroupImmediate(groupId: UUID) {
+        val group = groups.remove(groupId) ?: return
+        anchorKeyForGroup(group)?.let { anchorDisplayGroups.remove(it, group.id) }
+        group.entityUuids.forEach { entityId ->
+            val entity = Bukkit.getEntity(entityId)
+            if (entity != null && isOwnedDisplay(entity)) {
+                entity.remove()
+            }
+        }
+        removeNearbyOwnedDisplays(group.baseLocation, 4.0)
+    }
+
     private fun updateDisplayGroupLines(groupId: UUID, lines: List<String>) {
         val group = groups[groupId] ?: return
         scheduler.runAtLocation(group.baseLocation) {
@@ -179,7 +241,7 @@ class DisplayService(
             group.entityUuids.forEach { entityId ->
                 val entity = Bukkit.getEntity(entityId) ?: return@forEach
                 if (entity is TextDisplay && isOwnedDisplay(entity) && lineIndex < lines.size) {
-                    entity.text(ComponentUtil.parse(lines[lineIndex]))
+                    entity.text(ComponentUtil.parseWithPapi(lines[lineIndex], null))
                     lineIndex++
                 }
             }
@@ -192,7 +254,7 @@ class DisplayService(
         return when (spec.type) {
             DisplayElementType.TEXT -> world.spawn(location, TextDisplay::class.java) { entity ->
                 configureDisplay(entity, group, spec, "text")
-                entity.text(spec.text?.let(ComponentUtil::parse) ?: Component.empty())
+                entity.text(spec.text?.let { ComponentUtil.parseWithPapi(it, null) } ?: Component.empty())
                 entity.alignment = spec.alignment
                 entity.isShadowed = spec.shadowed
                 entity.isSeeThrough = spec.seeThrough
@@ -256,7 +318,59 @@ class DisplayService(
             blockY == other.blockY &&
             blockZ == other.blockZ
 
+    private fun ensureAnchorDisplay(anchor: CrateAnchor) {
+        val worldKey = NamespacedKey.fromString(anchor.worldKey)
+        val world = worldKey?.let(Bukkit::getWorld) ?: return
+        val chunkX = anchor.x shr 4
+        val chunkZ = anchor.z shr 4
+        if (!world.isChunkLoaded(chunkX, chunkZ)) return
+
+        val key = AnchorDisplayKey(anchor.crateId, anchor.worldKey, anchor.x, anchor.y, anchor.z)
+        val existingGroupId = anchorDisplayGroups[key]
+        if (existingGroupId != null) {
+            val existingGroup = groups[existingGroupId]
+            if (existingGroup != null && isGroupAlive(existingGroup)) {
+                return
+            }
+            anchorDisplayGroups.remove(key, existingGroupId)
+            if (existingGroup != null) {
+                removeDisplayGroup(existingGroupId)
+            }
+        }
+
+        val crate = crateManager.byId(anchor.crateId) ?: return
+        val base = Location(world, anchor.x + 0.5, anchor.y + 0.5, anchor.z + 0.5)
+        val spec = factory.crateDisplay(crate, base) ?: return
+        val group = createDisplayGroup(spec) ?: return
+        anchorDisplayGroups[key] = group.id
+    }
+
+    private fun isGroupAlive(group: DisplayGroup): Boolean =
+        group.entityUuids
+            .mapNotNull(Bukkit::getEntity)
+            .any(::isOwnedDisplay)
+
+    private fun anchorKeyForGroup(group: DisplayGroup): AnchorDisplayKey? {
+        if (group.ownerType != "crate") return null
+        val worldKey = group.baseLocation.world?.key?.asString() ?: return null
+        return AnchorDisplayKey(
+            crateId = group.ownerId,
+            worldKey = worldKey,
+            x = group.baseLocation.blockX,
+            y = group.baseLocation.blockY,
+            z = group.baseLocation.blockZ,
+        )
+    }
+
     private fun displayClassAvailable(className: String): Boolean = runCatching {
         Class.forName(className)
     }.isSuccess
+
+    private data class AnchorDisplayKey(
+        val crateId: String,
+        val worldKey: String,
+        val x: Int,
+        val y: Int,
+        val z: Int,
+    )
 }

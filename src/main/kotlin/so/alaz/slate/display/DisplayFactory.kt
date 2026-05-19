@@ -1,10 +1,11 @@
 package so.alaz.slate.display
 
-import kotlin.time.Duration
 import org.bukkit.Location
-import org.bukkit.inventory.ItemStack
 import org.bukkit.util.Vector
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.crate.CratePlaceholderResolver
+import so.alaz.slate.item.ItemFactory
+import so.alaz.slate.item.visualStackForCrateDisplay
 
 class DisplayFactory {
     fun crateDisplay(crate: CrateDefinition, baseLocation: Location): DisplayGroupSpec? {
@@ -16,7 +17,7 @@ class DisplayFactory {
             elements += DisplayElementSpec(
                 type = DisplayElementType.ITEM,
                 offset = Vector(0.0, config.item.heightOffset, 0.0),
-                itemStack = ItemStack(config.item.material),
+                itemStack = ItemFactory.visualStackForCrateDisplay(crate, config.item.material),
                 scale = config.item.scale,
                 billboard = config.billboard,
                 viewRange = config.viewRange,
@@ -52,28 +53,12 @@ class DisplayFactory {
     }
 
     fun renderCratePlaceholders(crate: CrateDefinition, template: String, playerName: String? = null): String {
-        val values = mapOf(
-            "crate_id" to crate.id,
-            "crate_name" to (crate.display.crateName ?: crate.name),
-            "key_name" to crate.keyDefinition.name,
-            "key_amount" to crate.requiredKeys.toString(),
-            "cooldown" to crate.cooldown.displayValue(),
-            "player_name" to (playerName ?: ""),
+        return CratePlaceholderResolver.render(
+            template = template,
+            crate = crate,
+            playerName = playerName,
+            crateNameOverride = crate.display.crateName ?: crate.name,
         )
-        return values.entries.fold(template) { current, (key, value) ->
-            current.replace("{$key}", value)
-        }
     }
 
-    private fun Duration.displayValue(): String {
-        if (inWholeMilliseconds <= 0) return "none"
-        val seconds = inWholeSeconds
-        if (seconds < 60) return "${seconds}s"
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
-        if (minutes < 60) return if (remainingSeconds == 0L) "${minutes}m" else "${minutes}m ${remainingSeconds}s"
-        val hours = minutes / 60
-        val remainingMinutes = minutes % 60
-        return if (remainingMinutes == 0L) "${hours}h" else "${hours}h ${remainingMinutes}m"
-    }
 }
