@@ -8,6 +8,8 @@ data class PluginConfig(
     val crateScanRecursive: Boolean = false,
     val maxBulkOpenAmount: Int = 10,
     val gui: GuiConfig = GuiConfig(),
+    val anchors: AnchorProtectionConfig = AnchorProtectionConfig(),
     val database: DatabaseConfig = DatabaseConfig(),
     val cluster: ClusterConfig = ClusterConfig(),
+    val currency: CurrencyConfig = CurrencyConfig(),
 )

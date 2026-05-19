@@ -14,6 +14,11 @@ gui:
     border-material: GRAY_STAINED_GLASS_PANE
     crate-slots: "10-16,19-25"
 
+anchors:
+  break-confirmation:
+    enabled: false
+    window-seconds: 5
+
 database:
   type: sqlite
   host: localhost
@@ -33,3 +38,32 @@ cluster:
     database: 0
     lockTtlMs: 5000
     acquireTimeoutMs: 5000
+
+currency:
+  # auto = Ledger first, then Vault, then NoOp.
+  default-provider: auto
+  # Used when callers do not specify a currency.
+  default-currency: coins
+  ledger:
+    enabled: true
+  vault:
+    enabled: true
+    # Vault is single-currency only; Slate maps this alias to Vault balances.
+    currency-id: money
+    currency-name: "Money"
+    currency-symbol: "$"
+    decimals: 2
+  format:
+    # us, uk, eu, jp, in, ch, custom
+    standard: us
+    # prefix or suffix
+    symbol-placement: prefix
+    use-grouping: true
+    min-fraction-digits: 2
+    max-fraction-digits: 2
+    default-symbol: "$"
+    custom:
+      # Used only when standard=custom
+      pattern: "#,##0.00"
+      decimal-separator: "."
+      grouping-separator: ","

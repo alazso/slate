@@ -54,6 +54,10 @@ class ConfigManager(
                         .ifEmpty { MenuGuiConfig().crateSlots },
                 ),
             ),
+            anchors = AnchorProtectionConfig(
+                breakConfirmEnabled = yaml.getBoolean("anchors.break-confirmation.enabled", false),
+                breakConfirmWindowSeconds = yaml.getLong("anchors.break-confirmation.window-seconds", 5L).coerceAtLeast(1L),
+            ),
             database = DatabaseConfig(
                 type = dbType,
                 host = yaml.getString("database.host", "localhost").orEmpty(),
@@ -72,6 +76,31 @@ class ConfigManager(
                 redisDatabase = yaml.getInt("cluster.redis.database", 0),
                 redisLockTtl = yaml.getLong("cluster.redis.lockTtlMs", 5_000L).milliseconds.takeIf { it.isPositive() } ?: 5.seconds,
                 redisAcquireTimeout = yaml.getLong("cluster.redis.acquireTimeoutMs", 5_000L).milliseconds.takeIf { it.isPositive() } ?: 5.seconds,
+            ),
+            currency = parseCurrencyConfig(yaml),
+        )
+    }
+
+    private fun parseCurrencyConfig(yaml: YamlConfiguration): CurrencyConfig {
+        return CurrencyConfig(
+            defaultProvider = yaml.getString("currency.default-provider", "auto").orEmpty(),
+            defaultCurrency = yaml.getString("currency.default-currency", "coins").orEmpty(),
+            ledgerEnabled = yaml.getBoolean("currency.ledger.enabled", true),
+            vaultEnabled = yaml.getBoolean("currency.vault.enabled", true),
+            vaultCurrencyId = yaml.getString("currency.vault.currency-id", "money").orEmpty(),
+            vaultCurrencyName = yaml.getString("currency.vault.currency-name", "Money").orEmpty(),
+            vaultCurrencySymbol = yaml.getString("currency.vault.currency-symbol"),
+            vaultDecimals = yaml.getInt("currency.vault.decimals", 2),
+            format = CurrencyFormatConfig(
+                standard = yaml.getString("currency.format.standard", "us").orEmpty(),
+                symbolPlacement = yaml.getString("currency.format.symbol-placement", "prefix").orEmpty(),
+                useGrouping = yaml.getBoolean("currency.format.use-grouping", true),
+                minFractionDigits = yaml.getInt("currency.format.min-fraction-digits", 2),
+                maxFractionDigits = yaml.getInt("currency.format.max-fraction-digits", 2),
+                defaultSymbol = yaml.getString("currency.format.default-symbol", "$").orEmpty(),
+                customPattern = yaml.getString("currency.format.custom.pattern"),
+                customDecimalSeparator = yaml.getString("currency.format.custom.decimal-separator", ".").orEmpty(),
+                customGroupingSeparator = yaml.getString("currency.format.custom.grouping-separator", ",").orEmpty(),
             ),
         )
     }
