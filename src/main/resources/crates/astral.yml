@@ -1,0 +1,307 @@
+# High-complexity example crate for Slate.
+# This file is seeded as a default crate when no crate YAML files exist yet.
+id: astral
+crate-version: 1
+state: active
+language: en
+name: <gradient:#f97316:#facc15><bold>Astral Reliquary</bold></gradient>
+requiredKeys: 2
+maxPulls: 250
+cooldown: 1s
+allowedWorlds:
+  - world
+  - minecraft:overworld
+
+requirements:
+  permissions:
+    open:
+      - slate.crate.astral.open
+    preview: []
+    list: []
+  regions:
+    allow: []
+    deny: []
+    requireWorldGuard: false
+
+animation:
+  enabled: true
+  template: csgo
+  tick-interval: 1
+  duration-ticks: 80
+  spin-speed-multiplier: 1.0
+  reveal-tail-ticks: 5
+  sound-tick: BLOCK_NOTE_BLOCK_HAT
+  sound-reveal: ENTITY_PLAYER_LEVELUP
+  skip-permission: slate.animation.skip
+  decoy-count: 20
+
+preview:
+  enabled: true
+  rows: 6
+  border-material: BLACK_STAINED_GLASS_PANE
+  content-slots: 10-16,19-25,28-34
+  nav-prev-slot: 48
+  nav-next-slot: 50
+  nav-close-slot: 49
+  info-slot: 4
+  show-chances: true
+  show-tiers: true
+
+# New interaction option: left-clicking an anchor opens preview.
+left-click: open-preview
+
+selection:
+  mode: weighted
+  structure: tiers
+  allow-empty: false
+  empty-weight: 0
+
+key:
+  provider: vanilla
+  name: <gradient:#38bdf8:#a855f7><bold>Astral Reliquary Key</bold></gradient>
+  lore:
+    - <dark_gray>Forged from starlight and sealed rewards.</dark_gray>
+    - <gray>Use at the <gold>Astral Reliquary</gold> crate.</gray>
+    - '<gray>Required per open: <yellow>2</yellow></gray>'
+    - ''
+    - <aqua>Right-click the anchored crate to open.</aqua>
+  material: TRIPWIRE_HOOK
+  customModelData:
+    - 26001
+    - 26002
+  customItemId: minecraft:trial_key
+  glowing: true
+
+display:
+  enabled: true
+  view-range: 48
+  billboard: center
+  line-spacing: 0.28
+  item:
+    enabled: true
+    material: ENDER_CHEST
+    height-offset: 1.95
+    scale: 0.85
+    transform: FIXED
+  lines:
+    - '{crate_name}'
+    - '<gray>Requires: <yellow>{key_amount}x</yellow> {key_name}</gray>'
+    - '<gray>Cooldown: <aqua>{cooldown}</aqua></gray>'
+    - <green>Right-click to open</green>
+    - <aqua>Left-click to preview</aqua>
+
+pity:
+  enabled: true
+  opensRequired: 35
+  guaranteedTier: legendary
+
+tiers:
+  common:
+    name: <gray>Common</gray>
+    weight: 700
+  rare:
+    name: <aqua>Rare</aqua>
+    weight: 220
+  epic:
+    name: <light_purple>Epic</light_purple>
+    weight: 70
+  legendary:
+    name: <gold>Legendary</gold>
+    weight: 10
+
+prizes:
+  iron_cache:
+    name: <gray>Iron Cache</gray>
+    tier: common
+    weight: 160
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: IRON_INGOT
+        amount: 32
+      - material: COAL
+        amount: 24
+    messages:
+      - <gray>You recovered an <white>Iron Cache</white>.</gray>
+
+  farming_bundle:
+    name: <green>Farming Bundle</green>
+    tier: common
+    weight: 140
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: WHEAT_SEEDS
+        amount: 32
+      - material: BONE_MEAL
+        amount: 16
+      - CARROT*24
+    messages:
+      - <green>Your next harvest is ready to begin.</green>
+
+  builder_palette:
+    name: <yellow>Builder Palette</yellow>
+    tier: common
+    weight: 125
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: OAK_LOG
+        amount: 32
+      - material: STONE_BRICKS
+        amount: 48
+      - material: LANTERN
+        amount: 8
+    messages:
+      - <yellow>You won a compact builder kit.</yellow>
+
+  redstone_kit:
+    name: <red>Redstone Kit</red>
+    tier: common
+    weight: 110
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: REDSTONE
+        amount: 48
+      - material: REPEATER
+        amount: 8
+      - material: COMPARATOR
+        amount: 4
+    messages:
+      - <red>Time to automate something clever.</red>
+
+  emerald_pouch:
+    name: <green>Emerald Pouch</green>
+    tier: rare
+    weight: 80
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: EMERALD
+        amount: 12
+        customModelData:
+          - 26010
+        pdc:
+          slate:demo_reward: emerald_pouch
+          slate:rarity: rare
+    commands:
+      - experience add %player% 250 points
+    messages:
+      - <green>Villagers will like this one.</green>
+
+  enchanted_supply_drop:
+    name: <aqua>Enchanted Supply Drop</aqua>
+    tier: rare
+    weight: 65
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: EXPERIENCE_BOTTLE
+        amount: 32
+      - material: LAPIS_LAZULI
+        amount: 48
+      - material: ANVIL
+        amount: 1
+    commands:
+      - effect give %player% minecraft:haste 60 0 true
+    messages:
+      - <aqua>Arcane supplies spill out of the crate.</aqua>
+
+  nether_expedition:
+    name: <dark_red>Nether Expedition</dark_red>
+    tier: rare
+    weight: 50
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - material: OBSIDIAN
+        amount: 16
+      - material: FIRE_CHARGE
+        amount: 8
+      - material: GOLDEN_CARROT
+        amount: 16
+    messages:
+      - <dark_red>The Reliquary points you toward the Nether.</dark_red>
+
+  custom_cosmetic_hook:
+    name: <light_purple>Cosmetic Hook Placeholder</light_purple>
+    tier: epic
+    weight: 24
+    broadcast: false
+    broadcastMessage: ''
+    items:
+      - adapter: itemsadder
+        itemId: itemsadder:cosmetics/astral_hook
+        amount: 1
+        customModelData:
+          - 26050
+        pdc:
+          slate:demo_reward: cosmetic_hook
+    messages:
+      - <light_purple>This reward exercises external item-provider parsing.</light_purple>
+      - <gray>Install the matching provider before using it on a live crate.</gray>
+
+  beacon_fragment:
+    name: <light_purple>Beacon Fragment</light_purple>
+    tier: epic
+    weight: 18
+    broadcast: true
+    broadcastMessage: <light_purple>%player%</light_purple> <gray>found a</gray> <aqua>Beacon Fragment</aqua><gray> in the Astral Reliquary.</gray>
+    items:
+      - material: NETHER_STAR
+        amount: 1
+        customModelData:
+          - 26070
+        pdc:
+          slate:demo_reward: beacon_fragment
+          slate:rarity: epic
+      - material: GLASS
+        amount: 32
+    commands:
+      - experience add %player% 750 points
+    messages:
+      - <light_purple>A beacon fragment hums with stored light.</light_purple>
+
+  dragon_relic:
+    name: <gold><bold>Dragon Relic</bold></gold>
+    tier: legendary
+    weight: 7
+    broadcast: true
+    broadcastMessage: <gold><bold>%player%</bold></gold> <yellow>unsealed a Dragon Relic from the Astral Reliquary!</yellow>
+    items:
+      - material: DRAGON_BREATH
+        amount: 8
+      - material: ELYTRA
+        amount: 1
+        customModelData:
+          - 26100
+        pdc:
+          slate:demo_reward: dragon_relic
+          slate:rarity: legendary
+    commands:
+      - experience add %player% 2500 points
+      - title %player% title {"text":"Dragon Relic","color":"gold","bold":true}
+    messages:
+      - <gold><bold>Legendary!</bold></gold> <yellow>The Reliquary yields a Dragon Relic.</yellow>
+
+  server_celebration:
+    name: <gold>Server Celebration!</gold>
+    tier: legendary
+    weight: 3
+    broadcast: true
+    broadcastMessage: <gold>%player%</gold> <yellow>triggered a server celebration from the Astral Reliquary!</yellow>
+    commands:
+      - give %player% minecraft:diamond 16
+      - experience add %player% 5000 points
+      - say %player% won the rarest Astral Reliquary reward!
+    messages:
+      - <gold>The whole server hears the Reliquary ring.</gold>
+
+  firesword:
+    name: <gradient:#DC1C13:#F6BDC0>Firesword of the Ancient Giant</gradient>
+    tier: legendary
+    weight: 1
+    items:
+      - serialized: H4sIAAAAAAAA/5VTzW4TMRCekmy0uyAQ/0ItUl4gq4SmacOJA+oZCYnramJPEqtre2V72+bMO/F8jDc0u4gIga/29zfzOQcYwOPPGPAbOa+sAXjxI4VHSsJbrQwJh+vwUSrU1sjS31knB5AI25gAACc55MLq2hoywWfwvoNgCE6tmkCltlKtFbPnEZHCMOxq6rPzUxQ3pUSNGxrBiLWY/tMTaE8Kma3JYYjmMpSyvMWqob3HomP5MJ0v5eXVxeRqfk6T8/lKTJbTS5rI2WwqlwuUq8WaxX1lA6QaldmikZDB046iso6iyWHaKp/ASAWslIgegkPjKwzsXAXSxSFV8cCVxrkwBQw3Dnc9dAYJ3TP+V/4e1dlhSoVBTcVvk4A4KgZCMp4XF+MDfS7R3ZQbR2T+SeT0uIiviWRPY1YsjmsM4FU3Io33D/YAvufwrrsK1lZB1aVUvq5wl8HzrZKSTNk1JG2n+veWQA5vugdkBM826IgewOvuYq0clcghRFtERvUuReOD1WWM21/iPmp+zdDx11jlQ97kbstbZZLTP0jYGFWcOWAGo3VlMfgkKl6ffYGjqvEp/4vYEs91JcfbiE58jYIlFPrG3Sou8b7Cz2KS9mPtv1ckfdmRRpr/DwLwE5TEWtjZAwAA
+        amount: 1
