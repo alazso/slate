@@ -96,8 +96,7 @@ class CurrencyManagerGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (session.closeRequested) return
-        val scheduler = SlateAPI.scheduler() ?: return
-        refresh(context.player, scheduler, session.inventory)
+        rebuild(context.player)
     }
 
     private fun fillBorder(border: StaticSlot) {
@@ -215,12 +214,14 @@ class CurrencyManagerGui(
 
         val ctx = EconomyContext(reason = "admin.gui.currency.${kind.label.lowercase()}")
         val account = CurrencyAccount.player(playerId)
+        val scheduler = SlateAPI.scheduler() ?: return
         scope.launch {
             val result: EconomyMutationResult = when (kind) {
                 MutationKind.GIVE -> economy.deposit(account, provider.id, currency.id, amount, ctx)
                 MutationKind.TAKE -> economy.withdraw(account, provider.id, currency.id, amount, ctx)
                 MutationKind.SET -> economy.setBalance(account, provider.id, currency.id, amount, ctx)
             }
+            rebuildAndRefresh(context.player, scheduler, context.session.inventory)
             CommandMessages.dispatchForSender(context.player) {
                 when (result) {
                     is EconomyMutationResult.Success -> {

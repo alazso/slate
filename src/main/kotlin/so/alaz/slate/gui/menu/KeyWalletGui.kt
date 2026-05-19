@@ -67,8 +67,7 @@ class KeyWalletGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (session.closeRequested) return
-        val scheduler = SlateAPI.scheduler() ?: return
-        refresh(context.player, scheduler, session.inventory)
+        rebuild(context.player)
     }
 
     private fun fillBorder(border: StaticSlot) {

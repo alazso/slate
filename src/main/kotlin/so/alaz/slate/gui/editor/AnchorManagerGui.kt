@@ -68,8 +68,7 @@ class AnchorManagerGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (session.closeRequested) return
-        val scheduler = SlateAPI.scheduler() ?: return
-        refresh(context.player, scheduler, session.inventory)
+        rebuild(context.player)
     }
 
     private fun fillBorder(border: StaticSlot) {
@@ -132,6 +131,7 @@ class AnchorManagerGui(
                             GuiSounds.denied(context.player)
                         }
                     }
+                    rebuildAndRefresh(context.player, scheduler, context.session.inventory)
                 }
             }
             else -> {
@@ -168,8 +168,10 @@ class AnchorManagerGui(
         return StaticSlot(item) { context ->
             val service = SlateAPI.anchorService() ?: return@StaticSlot
             val scope = SlateAPI.pluginScope() ?: return@StaticSlot
+            val scheduler = SlateAPI.scheduler() ?: return@StaticSlot
             scope.launch {
                 runCatching { service.warmCache() }
+                rebuildAndRefresh(context.player, scheduler, context.session.inventory)
                 CommandMessages.dispatchForSender(context.player) {
                     GuiSounds.success(context.player)
                     CommandMessages.chat(

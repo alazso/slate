@@ -66,8 +66,7 @@ class PendingClaimsGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (session.closeRequested) return
-        val scheduler = SlateAPI.scheduler() ?: return
-        refresh(context.player, scheduler, session.inventory)
+        rebuild(context.player)
     }
 
     private fun fillBorder(border: StaticSlot) {
@@ -126,7 +125,9 @@ class PendingClaimsGui(
             GuiSounds.success(context.player)
             scope.launch {
                 claimService.claimPending(context.player)
-                SlateAPI.scheduler()?.let { sched -> refresh(context.player, sched, context.session.inventory) }
+                SlateAPI.scheduler()?.let { sched ->
+                    rebuildAndRefresh(context.player, sched, context.session.inventory)
+                }
             }
         }
     }

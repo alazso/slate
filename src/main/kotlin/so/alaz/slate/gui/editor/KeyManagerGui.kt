@@ -70,8 +70,7 @@ class KeyManagerGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (session.closeRequested) return
-        val scheduler = SlateAPI.scheduler() ?: return
-        refresh(context.player, scheduler, session.inventory)
+        rebuild(context.player)
     }
 
     private fun fillBorder(border: StaticSlot) {
@@ -171,6 +170,7 @@ class KeyManagerGui(
             }
         }
 
+        val scheduler = SlateAPI.scheduler() ?: return
         scope.launch {
             val result = runCatching {
                 when (kind) {
@@ -181,6 +181,7 @@ class KeyManagerGui(
                 }
             }
             val finalAmount = runCatching { keyService.getVirtualKeys(playerId, crateId) }.getOrDefault(0)
+            rebuildAndRefresh(context.player, scheduler, context.session.inventory)
             CommandMessages.dispatchForSender(context.player) {
                 result.onSuccess {
                     GuiSounds.success(context.player)

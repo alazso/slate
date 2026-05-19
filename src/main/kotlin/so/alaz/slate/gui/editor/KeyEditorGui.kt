@@ -181,8 +181,7 @@ class KeyEditorGui(
     override suspend fun onClick(context: GuiClickContext, session: so.alaz.slate.gui.GuiSession, slot: so.alaz.slate.gui.GuiSlot?) {
         super.onClick(context, session, slot)
         if (!session.closeRequested) {
-            // Keep live preview synchronized after each action or prompt outcome.
-            onBeforeOpen(context.player)
+            rebuild(context.player)
         }
     }
 

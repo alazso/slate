@@ -351,8 +351,7 @@ class TierEditorGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (!session.closeRequested) {
-            // Keep tiles/state synchronized after every click and prompt.
-            onBeforeOpen(context.player)
+            rebuild(context.player)
         }
     }
 }

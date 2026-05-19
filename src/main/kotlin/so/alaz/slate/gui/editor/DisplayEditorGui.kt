@@ -191,7 +191,7 @@ class DisplayEditorGui(
     override suspend fun onClick(context: GuiClickContext, session: GuiSession, slot: GuiSlot?) {
         super.onClick(context, session, slot)
         if (!session.closeRequested) {
-            onBeforeOpen(context.player)
+            rebuild(context.player)
         }
     }
 }
