@@ -99,15 +99,9 @@ object AnchorCommand {
                                 }
                                 SlateAPI.displayService()?.reloadDisplays()
                             }
-                            val plugin = SlateAPI.plugin()
-                            if (plugin != null) {
-                                plugin.server.scheduler.runTask(
-                                    plugin,
-                                    Runnable {
-                                        if (removed) CommandMessages.chat(sender, MessageKeys.ANCHOR_REMOVE_SUCCESS)
-                                        else CommandMessages.chat(sender, MessageKeys.ANCHOR_REMOVE_NONE)
-                                    },
-                                )
+                            CommandMessages.dispatchForSender(sender) {
+                                if (removed) CommandMessages.chat(sender, MessageKeys.ANCHOR_REMOVE_SUCCESS)
+                                else CommandMessages.chat(sender, MessageKeys.ANCHOR_REMOVE_NONE)
                             }
                         }
                         Command.SINGLE_SUCCESS
@@ -119,25 +113,21 @@ object AnchorCommand {
                     .executes { context ->
                         val anchorService = SlateAPI.anchorService()
                         val scope = SlateAPI.pluginScope()
-                        val plugin = SlateAPI.plugin()
-                        if (anchorService == null || scope == null || plugin == null) {
+                        if (anchorService == null || scope == null) {
                             CommandMessages.notInitialized(context.source.sender)
                             return@executes 0
                         }
                         val sender = context.source.sender
                         scope.launch {
                             val anchors = anchorService.allAnchors()
-                            plugin.server.scheduler.runTask(
-                                plugin,
-                                Runnable {
-                                    if (anchors.isEmpty()) {
-                                        CommandMessages.chat(sender, MessageKeys.ANCHOR_LIST_EMPTY)
-                                    } else {
-                                        val text = anchors.take(8).joinToString(" | ") { "${it.crateId}@${it.worldKey}:${it.x},${it.y},${it.z}" }
-                                        CommandMessages.chat(sender, MessageKeys.ANCHOR_LIST, mapOf("count" to anchors.size, "text" to text))
-                                    }
-                                },
-                            )
+                            CommandMessages.dispatchForSender(sender) {
+                                if (anchors.isEmpty()) {
+                                    CommandMessages.chat(sender, MessageKeys.ANCHOR_LIST_EMPTY)
+                                } else {
+                                    val text = anchors.take(8).joinToString(" | ") { "${it.crateId}@${it.worldKey}:${it.x},${it.y},${it.z}" }
+                                    CommandMessages.chat(sender, MessageKeys.ANCHOR_LIST, mapOf("count" to anchors.size, "text" to text))
+                                }
+                            }
                         }
                         Command.SINGLE_SUCCESS
                     },
@@ -156,26 +146,10 @@ object AnchorCommand {
                     ),
             )
             .then(
-                Commands.literal("scan")
-                    .requires { it.sender.hasPermission(SlatePermissions.ADMIN_ANCHOR_SCAN) }
-                    .executes { context ->
-                        CommandMessages.chat(context.source.sender, MessageKeys.COMMON_NOT_IMPLEMENTED, mapOf("feature" to "/sla anchor scan"))
-                        Command.SINGLE_SUCCESS
-                    },
-            )
-            .then(
                 Commands.literal("refresh")
                     .requires { it.sender.hasPermission(SlatePermissions.ADMIN_ANCHOR_REFRESH) }
                     .executes { context ->
                         refreshAnchors(context.source)
-                    },
-            )
-            .then(
-                Commands.literal("repair")
-                    .requires { it.sender.hasPermission(SlatePermissions.ADMIN_ANCHOR_REPAIR) }
-                    .executes { context ->
-                        CommandMessages.chat(context.source.sender, MessageKeys.COMMON_NOT_IMPLEMENTED, mapOf("feature" to "/sla anchor repair"))
-                        Command.SINGLE_SUCCESS
                     },
             )
             .build()
@@ -189,8 +163,7 @@ object AnchorCommand {
         val anchorService = SlateAPI.anchorService()
         val crateManager = SlateAPI.crateManager()
         val scope = SlateAPI.pluginScope()
-        val plugin = SlateAPI.plugin()
-        if (anchorService == null || crateManager == null || scope == null || plugin == null) {
+        if (anchorService == null || crateManager == null || scope == null) {
             CommandMessages.notInitialized(player)
             return 0
         }
@@ -201,35 +174,32 @@ object AnchorCommand {
 
         scope.launch {
             val anchor = anchorService.allAnchors().firstOrNull { it.crateId == crateId }
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    if (anchor == null) {
-                        CommandMessages.chat(player, MessageKeys.ANCHOR_TP_NOT_FOUND, mapOf("crate" to crateId))
-                        return@Runnable
-                    }
-                    val worldKey = NamespacedKey.fromString(anchor.worldKey)
-                    val world = worldKey?.let(Bukkit::getWorld)
-                    if (world == null) {
-                        CommandMessages.chat(player, MessageKeys.ANCHOR_TP_WORLD_UNLOADED, mapOf("world" to anchor.worldKey))
-                        return@Runnable
-                    }
-                    val target = Location(
-                        world,
-                        anchor.x + 0.5,
-                        anchor.y + 1.0,
-                        anchor.z + 0.5,
-                        player.location.yaw,
-                        player.location.pitch,
-                    )
-                    player.teleport(target)
-                    CommandMessages.chat(
-                        player,
-                        MessageKeys.ANCHOR_TP_SUCCESS,
-                        mapOf("crate" to crateId, "x" to anchor.x, "y" to anchor.y, "z" to anchor.z),
-                    )
-                },
-            )
+            CommandMessages.dispatchForSender(player) {
+                if (anchor == null) {
+                    CommandMessages.chat(player, MessageKeys.ANCHOR_TP_NOT_FOUND, mapOf("crate" to crateId))
+                    return@dispatchForSender
+                }
+                val worldKey = NamespacedKey.fromString(anchor.worldKey)
+                val world = worldKey?.let(Bukkit::getWorld)
+                if (world == null) {
+                    CommandMessages.chat(player, MessageKeys.ANCHOR_TP_WORLD_UNLOADED, mapOf("world" to anchor.worldKey))
+                    return@dispatchForSender
+                }
+                val target = Location(
+                    world,
+                    anchor.x + 0.5,
+                    anchor.y + 1.0,
+                    anchor.z + 0.5,
+                    player.location.yaw,
+                    player.location.pitch,
+                )
+                player.teleport(target)
+                CommandMessages.chat(
+                    player,
+                    MessageKeys.ANCHOR_TP_SUCCESS,
+                    mapOf("crate" to crateId, "x" to anchor.x, "y" to anchor.y, "z" to anchor.z),
+                )
+            }
         }
         return Command.SINGLE_SUCCESS
     }
@@ -237,21 +207,18 @@ object AnchorCommand {
     private fun refreshAnchors(source: CommandSourceStack): Int {
         val anchorService = SlateAPI.anchorService()
         val scope = SlateAPI.pluginScope()
-        val plugin = SlateAPI.plugin()
-        if (anchorService == null || scope == null || plugin == null) {
+        if (anchorService == null || scope == null) {
             CommandMessages.notInitialized(source.sender)
             return 0
         }
         val sender = source.sender
         scope.launch {
             anchorService.warmCache()
+            SlateAPI.displayService()?.reloadDisplays()
             val count = anchorService.allAnchors().size
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    CommandMessages.chat(sender, MessageKeys.ANCHOR_REFRESH_COMPLETE, mapOf("count" to count))
-                },
-            )
+            CommandMessages.dispatchForSender(sender) {
+                CommandMessages.chat(sender, MessageKeys.ANCHOR_REFRESH_COMPLETE, mapOf("count" to count))
+            }
         }
         return Command.SINGLE_SUCCESS
     }

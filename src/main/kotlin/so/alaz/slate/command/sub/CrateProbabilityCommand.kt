@@ -21,12 +21,15 @@ import so.alaz.slate.api.SlateAPI
 import so.alaz.slate.command.SlatePermissions
 import so.alaz.slate.config.ConfigValidator
 import so.alaz.slate.crate.CrateDefinition
+import so.alaz.slate.gui.editor.CrateEditorGui
+import so.alaz.slate.gui.editor.CrateListGui
+import so.alaz.slate.gui.editor.EditorCrateAccess
+import so.alaz.slate.item.ItemStackCodec
 import so.alaz.slate.probability.SelectionMode
 import so.alaz.slate.probability.SelectionStructure
 import so.alaz.slate.message.MessageKeys
 import so.alaz.slate.probability.ChanceFormatter
 import so.alaz.slate.probability.ProbabilityEngine
-import so.alaz.slate.util.ItemUtil
 
 object CrateProbabilityCommand {
     private const val MAX_SIMULATION_ROLLS = 250_000
@@ -63,6 +66,7 @@ object CrateProbabilityCommand {
                     it.sender.hasPermission(SlatePermissions.CRATE_SET) ||
                     it.sender.hasPermission(SlatePermissions.CRATE_UNSET) ||
                     it.sender.hasPermission(SlatePermissions.CRATE_ADD_REWARD) ||
+                    it.sender.hasPermission(SlatePermissions.CRATE_EDITOR) ||
                     it.sender.hasPermission(SlatePermissions.CRATE_CHANCES) ||
                     it.sender.hasPermission(SlatePermissions.CRATE_VALIDATE) ||
                     it.sender.hasPermission(SlatePermissions.CRATE_SIMULATE)
@@ -78,6 +82,7 @@ object CrateProbabilityCommand {
             .then(setNode())
             .then(unsetNode())
             .then(addRewardNode())
+            .then(editorNode())
             .then(chancesNode())
             .then(validateNode())
             .then(simulateNode())
@@ -405,6 +410,52 @@ object CrateProbabilityCommand {
             )
             .build()
 
+    private fun editorNode(): LiteralCommandNode<CommandSourceStack> =
+        Commands.literal("editor")
+            .requires { hasPermission(it, SlatePermissions.CRATE_EDITOR) }
+            .executes { context ->
+                openEditor(context, null)
+            }
+            .then(
+                Commands.argument("crate", StringArgumentType.word())
+                    .suggests { context, builder -> CommandSuggestions.suggestCrateIds(context.source, builder) }
+                    .executes { context ->
+                        openEditor(context, StringArgumentType.getString(context, "crate"))
+                    },
+            )
+            .build()
+
+    private fun openEditor(context: CommandContext<CommandSourceStack>, crateId: String?): Int {
+        val sender = context.source.sender
+        val player = sender as? Player
+        if (player == null) {
+            CommandMessages.chat(sender, MessageKeys.COMMON_ONLY_PLAYERS, mapOf("command" to "/sla crate editor"))
+            return 0
+        }
+
+        val guiService = SlateAPI.guiService()
+        val scope = SlateAPI.pluginScope()
+        if (guiService == null || scope == null) {
+            CommandMessages.notInitialized(sender)
+            return 0
+        }
+
+        val target = if (crateId.isNullOrBlank()) {
+            CrateListGui()
+        } else {
+            val crate = EditorCrateAccess.findCrate(crateId)
+            if (crate == null) {
+                CommandMessages.chat(sender, MessageKeys.COMMON_UNKNOWN_CRATE, mapOf("crate" to crateId))
+                return 0
+            }
+            CrateEditorGui(crate)
+        }
+        scope.launch {
+            guiService.openGui(player, target)
+        }
+        return Command.SINGLE_SUCCESS
+    }
+
     private fun addRewardHandNode(): LiteralCommandNode<CommandSourceStack> =
         Commands.literal("hand")
             .then(
@@ -708,7 +759,7 @@ object CrateProbabilityCommand {
                 yaml.set("prizes.${rewardId}.weight", null)
             }
         }
-        val serialized = ItemUtil.serializeItemStack(stack)
+        val serialized = ItemStackCodec.serialize(stack)
         if (serialized == null) {
             return false
         }

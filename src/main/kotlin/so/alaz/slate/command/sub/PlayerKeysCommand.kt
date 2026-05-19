@@ -41,8 +41,7 @@ object PlayerKeysCommand {
         val scope = SlateAPI.pluginScope()
         val keyService = SlateAPI.keyService()
         val crateManager = SlateAPI.crateManager()
-        val plugin = SlateAPI.plugin()
-        if (scope == null || keyService == null || crateManager == null || plugin == null) {
+        if (scope == null || keyService == null || crateManager == null) {
             CommandMessages.notInitialized(player)
             return 0
         }
@@ -60,28 +59,23 @@ object PlayerKeysCommand {
                     total += amount
                 }
                 val body = parts.joinToString(", ").ifBlank { "none" }
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable {
-                        CommandMessages.chat(player, MessageKeys.PLAYER_KEYS_TOTAL, mapOf("total" to total, "body" to body))
-                    },
-                )
+                CommandMessages.dispatchForSender(player) {
+                    CommandMessages.chat(player, MessageKeys.PLAYER_KEYS_TOTAL, mapOf("total" to total, "body" to body))
+                }
                 return@launch
             }
 
             val crate = crateManager.byId(crateId)
             if (crate == null) {
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable { CommandMessages.chat(player, MessageKeys.COMMON_UNKNOWN_CRATE, mapOf("crate" to crateId)) },
-                )
+                CommandMessages.dispatchForSender(player) {
+                    CommandMessages.chat(player, MessageKeys.COMMON_UNKNOWN_CRATE, mapOf("crate" to crateId))
+                }
                 return@launch
             }
             val amount = keyService.getVirtualKeys(player.uniqueId, crate.id)
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable { CommandMessages.chat(player, MessageKeys.PLAYER_KEYS_SINGLE, mapOf("crate" to crate.id, "amount" to amount)) },
-            )
+            CommandMessages.dispatchForSender(player) {
+                CommandMessages.chat(player, MessageKeys.PLAYER_KEYS_SINGLE, mapOf("crate" to crate.id, "amount" to amount))
+            }
         }
         return Command.SINGLE_SUCCESS
     }

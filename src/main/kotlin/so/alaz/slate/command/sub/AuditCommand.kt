@@ -28,37 +28,33 @@ object AuditCommand {
     private fun listRecent(source: CommandSourceStack, limit: Int): Int {
         val storage = SlateAPI.storageService()
         val scope = SlateAPI.pluginScope()
-        val plugin = SlateAPI.plugin()
-        if (storage == null || scope == null || plugin == null) {
+        if (storage == null || scope == null) {
             CommandMessages.notInitialized(source.sender)
             return 0
         }
         CommandMessages.chat(source.sender, MessageKeys.AUDIT_LOADING)
         scope.launch {
             val rows = storage.listRecentOpenOperations(limit)
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    if (rows.isEmpty()) {
-                        CommandMessages.chat(source.sender, MessageKeys.AUDIT_EMPTY)
-                        return@Runnable
-                    }
-                    CommandMessages.chat(source.sender, MessageKeys.AUDIT_HEADER, mapOf("count" to rows.size))
-                    rows.take(limit).forEach { op ->
-                        CommandMessages.chat(
-                            source.sender,
-                            MessageKeys.AUDIT_ROW,
-                            mapOf(
-                                "operationId" to op.operationId.take(8),
-                                "crate" to op.crateId,
-                                "state" to op.state,
-                                "prize" to (op.prizeId ?: "-"),
-                                "error" to (op.errorMessage ?: "-"),
-                            ),
-                        )
-                    }
-                },
-            )
+            CommandMessages.dispatchForSender(source.sender) {
+                if (rows.isEmpty()) {
+                    CommandMessages.chat(source.sender, MessageKeys.AUDIT_EMPTY)
+                    return@dispatchForSender
+                }
+                CommandMessages.chat(source.sender, MessageKeys.AUDIT_HEADER, mapOf("count" to rows.size))
+                rows.take(limit).forEach { op ->
+                    CommandMessages.chat(
+                        source.sender,
+                        MessageKeys.AUDIT_ROW,
+                        mapOf(
+                            "operationId" to op.operationId.take(8),
+                            "crate" to op.crateId,
+                            "state" to op.state,
+                            "prize" to (op.prizeId ?: "-"),
+                            "error" to (op.errorMessage ?: "-"),
+                        ),
+                    )
+                }
+            }
         }
         return Command.SINGLE_SUCCESS
     }

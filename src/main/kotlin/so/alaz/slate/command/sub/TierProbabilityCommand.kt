@@ -92,12 +92,13 @@ object TierProbabilityCommand {
                                     return@executes 0
                                 }
                                 val (file, yaml) = loaded
-                                if (yaml.contains("tiers.$tierId")) {
+                                val state = TierMutationSupport.fromYaml(yaml)
+                                val mutation = TierMutationSupport.createTier(state, tierId, displayName = tierId, weight = 1)
+                                if (!mutation.success) {
                                     CommandMessages.chat(context.source.sender, MessageKeys.TIER_ALREADY_EXISTS, mapOf("tier" to tierId))
                                     return@executes 0
                                 }
-                                yaml.set("tiers.$tierId.name", tierId)
-                                yaml.set("tiers.$tierId.weight", 1)
+                                TierMutationSupport.writeToYaml(state, yaml)
                                 val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                 if (!reloadResult.success) {
                                     CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
@@ -142,19 +143,17 @@ object TierProbabilityCommand {
                                     return@executes 0
                                 }
                                 val (file, yaml) = loaded
-                                val rewardsUsingTier = yaml.getConfigurationSection("prizes")
-                                    ?.getKeys(false)
-                                    ?.filter { yaml.getString("prizes.$it.tier") == tierId }
-                                    .orEmpty()
-                                if (rewardsUsingTier.isNotEmpty()) {
+                                val state = TierMutationSupport.fromYaml(yaml)
+                                val mutation = TierMutationSupport.deleteTier(state, tierId)
+                                if (!mutation.success) {
                                     CommandMessages.chat(
                                         context.source.sender,
                                         MessageKeys.TIER_DELETE_REFERENCED,
-                                        mapOf("tier" to tierId, "rewards" to rewardsUsingTier.joinToString(", ")),
+                                        mapOf("tier" to tierId, "rewards" to mutation.referencedRewards.joinToString(", ")),
                                     )
                                     return@executes 0
                                 }
-                                yaml.set("tiers.$tierId", null)
+                                TierMutationSupport.writeToYaml(state, yaml)
                                 val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                 if (!reloadResult.success) {
                                     CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
@@ -202,33 +201,21 @@ object TierProbabilityCommand {
                                             return@executes 0
                                         }
                                         val (file, yaml) = loaded
-                                        if (!yaml.contains("tiers.$oldTier")) {
+                                        val state = TierMutationSupport.fromYaml(yaml)
+                                        val mutation = TierMutationSupport.renameTier(state, oldTier, newTier)
+                                        when (mutation.error) {
+                                            TierMutationSupport.Error.UNKNOWN_TIER -> {
                                             CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_TIER, mapOf("tier" to oldTier))
                                             return@executes 0
                                         }
-                                        if (yaml.contains("tiers.$newTier")) {
+                                            TierMutationSupport.Error.TIER_ALREADY_EXISTS -> {
                                             CommandMessages.chat(context.source.sender, MessageKeys.TIER_ALREADY_EXISTS, mapOf("tier" to newTier))
                                             return@executes 0
                                         }
-
-                                        val tierSection = yaml.getConfigurationSection("tiers.$oldTier")
-                                        if (tierSection != null) {
-                                            val values = tierSection.getValues(true)
-                                            yaml.createSection("tiers.$newTier", values)
-                                        } else {
-                                            yaml.set("tiers.$newTier.name", newTier)
-                                            yaml.set("tiers.$newTier.weight", 1)
+                                            else -> Unit
                                         }
-                                        yaml.set("tiers.$newTier.name", yaml.getString("tiers.$newTier.name", newTier))
-                                        yaml.set("tiers.$oldTier", null)
-
-                                        yaml.getConfigurationSection("prizes")
-                                            ?.getKeys(false)
-                                            ?.forEach { rewardId ->
-                                                if (yaml.getString("prizes.$rewardId.tier") == oldTier) {
-                                                    yaml.set("prizes.$rewardId.tier", newTier)
-                                                }
-                                            }
+                                        if (!mutation.success) return@executes 0
+                                        TierMutationSupport.writeToYaml(state, yaml)
                                         val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                         if (!reloadResult.success) {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
@@ -277,11 +264,16 @@ object TierProbabilityCommand {
                                             return@executes 0
                                         }
                                         val (file, yaml) = loaded
-                                        if (!yaml.contains("tiers.$tierId")) {
+                                        val state = TierMutationSupport.fromYaml(yaml)
+                                        val mutation = TierMutationSupport.setTierWeight(state, tierId, weight)
+                                        if (mutation.error == TierMutationSupport.Error.UNKNOWN_TIER) {
                                             CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_TIER, mapOf("tier" to tierId))
                                             return@executes 0
                                         }
-                                        yaml.set("tiers.$tierId.weight", weight)
+                                        if (!mutation.success) {
+                                            return@executes 0
+                                        }
+                                        TierMutationSupport.writeToYaml(state, yaml)
                                         val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                         if (!reloadResult.success) {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")

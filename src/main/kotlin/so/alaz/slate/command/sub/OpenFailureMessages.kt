@@ -48,6 +48,7 @@ internal object OpenFailureMessages {
         FailureReason.MISSING_PERMISSION -> MessageKeys.OPEN_FAILED_REASON_MISSING_PERMISSION
         FailureReason.REGION_RESTRICTED -> MessageKeys.OPEN_FAILED_REASON_REGION_RESTRICTED
         FailureReason.WORLDGUARD_UNAVAILABLE -> MessageKeys.OPEN_FAILED_REASON_WORLDGUARD_UNAVAILABLE
+        FailureReason.INSUFFICIENT_CURRENCY -> MessageKeys.OPEN_FAILED_REASON_INSUFFICIENT_CURRENCY
         FailureReason.CANCELLED_BY_EVENT -> MessageKeys.OPEN_FAILED_REASON_CANCELLED_BY_EVENT
         FailureReason.DELIVERY_FAILED -> MessageKeys.OPEN_FAILED_REASON_DELIVERY_FAILED
     }
@@ -64,6 +65,7 @@ internal object OpenFailureMessages {
         FailureReason.MISSING_PERMISSION -> "You are missing permission to open this crate."
         FailureReason.REGION_RESTRICTED -> "You can't open this crate in this region."
         FailureReason.WORLDGUARD_UNAVAILABLE -> "Region checks are enabled but WorldGuard is unavailable."
+        FailureReason.INSUFFICIENT_CURRENCY -> "You don't have enough currency for this crate."
         FailureReason.CANCELLED_BY_EVENT -> "The crate opening was cancelled."
         FailureReason.DELIVERY_FAILED -> "The reward could not be delivered. It has been queued for recovery."
     }

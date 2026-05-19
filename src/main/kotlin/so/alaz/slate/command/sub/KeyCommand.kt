@@ -192,8 +192,7 @@ object KeyCommand {
 
         val scope = SlateAPI.pluginScope()
         val keyService = SlateAPI.keyService()
-        val plugin = SlateAPI.plugin()
-        if (scope == null || keyService == null || plugin == null) {
+        if (scope == null || keyService == null) {
             CommandMessages.notInitialized(sender)
             return 0
         }
@@ -235,30 +234,27 @@ object KeyCommand {
                     }
                 }
             }
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    result.onSuccess { message ->
-                        val suffix = reason?.let { " <gray>reason=$it</gray>" }.orEmpty()
-                        val key = when (type) {
-                            MutationType.GIVE -> MessageKeys.KEYS_GIVE_SUCCESS
-                            MutationType.TAKE -> MessageKeys.KEYS_TAKE_SUCCESS
-                            MutationType.SET -> MessageKeys.KEYS_SET_SUCCESS
-                        }
-                        CommandMessages.chat(
-                            sender,
-                            key,
-                            mapOf("message" to message, "suffix" to suffix),
-                        )
-                    }.onFailure { error ->
-                        CommandMessages.chat(
-                            sender,
-                            MessageKeys.KEYS_OPERATION_FAILED,
-                            mapOf("operation" to type.name.lowercase(), "error" to (error.message ?: "unknown error")),
-                        )
+            CommandMessages.dispatchForSender(sender) {
+                result.onSuccess { message ->
+                    val suffix = reason?.let { " <gray>reason=$it</gray>" }.orEmpty()
+                    val key = when (type) {
+                        MutationType.GIVE -> MessageKeys.KEYS_GIVE_SUCCESS
+                        MutationType.TAKE -> MessageKeys.KEYS_TAKE_SUCCESS
+                        MutationType.SET -> MessageKeys.KEYS_SET_SUCCESS
                     }
-                },
-            )
+                    CommandMessages.chat(
+                        sender,
+                        key,
+                        mapOf("message" to message, "suffix" to suffix),
+                    )
+                }.onFailure { error ->
+                    CommandMessages.chat(
+                        sender,
+                        MessageKeys.KEYS_OPERATION_FAILED,
+                        mapOf("operation" to type.name.lowercase(), "error" to (error.message ?: "unknown error")),
+                    )
+                }
+            }
         }
         return Command.SINGLE_SUCCESS
     }
@@ -281,8 +277,7 @@ object KeyCommand {
         val crateManager = SlateAPI.crateManager()
         val keyService = SlateAPI.keyService()
         val scope = SlateAPI.pluginScope()
-        val plugin = SlateAPI.plugin()
-        if (crateManager == null || keyService == null || scope == null || plugin == null) {
+        if (crateManager == null || keyService == null || scope == null) {
             CommandMessages.notInitialized(sender)
             return 0
         }
@@ -295,18 +290,15 @@ object KeyCommand {
 
         scope.launch {
             crates.forEach { id -> keyService.setVirtualKeys(targetUuid, id, 0) }
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    val suffix = reason?.let { " <gray>reason=$it</gray>" }.orEmpty()
-                    val target = crateId ?: "all crates"
-                    CommandMessages.chat(
-                        sender,
-                        MessageKeys.KEYS_CLEAR_SUCCESS,
-                        mapOf("player" to playerArg, "target" to target, "suffix" to suffix),
-                    )
-                },
-            )
+            CommandMessages.dispatchForSender(sender) {
+                val suffix = reason?.let { " <gray>reason=$it</gray>" }.orEmpty()
+                val target = crateId ?: "all crates"
+                CommandMessages.chat(
+                    sender,
+                    MessageKeys.KEYS_CLEAR_SUCCESS,
+                    mapOf("player" to playerArg, "target" to target, "suffix" to suffix),
+                )
+            }
         }
         return Command.SINGLE_SUCCESS
     }
@@ -322,8 +314,7 @@ object KeyCommand {
         val scope = SlateAPI.pluginScope()
         val keyService = SlateAPI.keyService()
         val crateManager = SlateAPI.crateManager()
-        val plugin = SlateAPI.plugin()
-        if (scope == null || keyService == null || crateManager == null || plugin == null) {
+        if (scope == null || keyService == null || crateManager == null) {
             CommandMessages.notInitialized(sender)
             return 0
         }
@@ -331,17 +322,15 @@ object KeyCommand {
             if (crateId != null) {
                 val crate = crateManager.byId(crateId)
                 if (crate == null) {
-                    plugin.server.scheduler.runTask(
-                        plugin,
-                        Runnable { CommandMessages.chat(sender, MessageKeys.COMMON_UNKNOWN_CRATE, mapOf("crate" to crateId)) },
-                    )
+                    CommandMessages.dispatchForSender(sender) {
+                        CommandMessages.chat(sender, MessageKeys.COMMON_UNKNOWN_CRATE, mapOf("crate" to crateId))
+                    }
                     return@launch
                 }
                 val amount = keyService.getVirtualKeys(targetUuid, crate.id)
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable { CommandMessages.chat(sender, MessageKeys.KEYS_BALANCE_SINGLE, mapOf("player" to playerArg, "amount" to amount, "crate" to crate.id)) },
-                )
+                CommandMessages.dispatchForSender(sender) {
+                    CommandMessages.chat(sender, MessageKeys.KEYS_BALANCE_SINGLE, mapOf("player" to playerArg, "amount" to amount, "crate" to crate.id))
+                }
                 return@launch
             }
 
@@ -353,12 +342,9 @@ object KeyCommand {
                 total += amount
             }
             val breakdown = parts.joinToString(", ").ifBlank { "none" }
-            plugin.server.scheduler.runTask(
-                plugin,
-                Runnable {
-                    CommandMessages.chat(sender, MessageKeys.KEYS_BALANCE_TOTAL, mapOf("player" to playerArg, "total" to total, "breakdown" to breakdown))
-                },
-            )
+            CommandMessages.dispatchForSender(sender) {
+                CommandMessages.chat(sender, MessageKeys.KEYS_BALANCE_TOTAL, mapOf("player" to playerArg, "total" to total, "breakdown" to breakdown))
+            }
         }
         return Command.SINGLE_SUCCESS
     }

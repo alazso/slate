@@ -66,12 +66,20 @@ object RewardProbabilityCommand {
                                             return@executes 0
                                         }
                                         val (file, yaml) = loaded
-                                        if (!yaml.contains("prizes.$rewardId")) {
+                                        val state = RewardMutationSupport.fromYaml(yaml)
+                                        val mutation = RewardMutationSupport.setRewardWeight(state, crate, rewardId, weight)
+                                        if (mutation.error == RewardMutationSupport.Error.UNKNOWN_REWARD) {
                                             CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_REWARD, mapOf("reward" to rewardId))
                                             return@executes 0
                                         }
-                                        yaml.set("prizes.$rewardId.weight", weight)
-                                        yaml.set("prizes.$rewardId.chance", null)
+                                        if (mutation.error == RewardMutationSupport.Error.INVALID_MODE) {
+                                            CommandMessages.chat(context.source.sender, MessageKeys.REWARD_WEIGHT_ONLY)
+                                            return@executes 0
+                                        }
+                                        if (!mutation.success) {
+                                            return@executes 0
+                                        }
+                                        RewardMutationSupport.writeToYaml(state, yaml)
                                         val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                         if (!reloadResult.success) {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
@@ -124,12 +132,24 @@ object RewardProbabilityCommand {
                                             return@executes 0
                                         }
                                         val (file, yaml) = loaded
-                                        if (!yaml.contains("prizes.$rewardId")) {
+                                        val state = RewardMutationSupport.fromYaml(yaml)
+                                        val mutation = RewardMutationSupport.setRewardChance(state, crate, rewardId, chance)
+                                        if (mutation.error == RewardMutationSupport.Error.UNKNOWN_REWARD) {
                                             CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_REWARD, mapOf("reward" to rewardId))
                                             return@executes 0
                                         }
-                                        yaml.set("prizes.$rewardId.chance", chance)
-                                        yaml.set("prizes.$rewardId.weight", null)
+                                        if (mutation.error == RewardMutationSupport.Error.INVALID_MODE) {
+                                            CommandMessages.chat(context.source.sender, MessageKeys.REWARD_CHANCE_ONLY)
+                                            return@executes 0
+                                        }
+                                        if (mutation.error == RewardMutationSupport.Error.INVALID_CHANCE) {
+                                            CommandMessages.chat(context.source.sender, MessageKeys.REWARD_CHANCE_ONLY)
+                                            return@executes 0
+                                        }
+                                        if (!mutation.success) {
+                                            return@executes 0
+                                        }
+                                        RewardMutationSupport.writeToYaml(state, yaml)
                                         val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                         if (!reloadResult.success) {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")
@@ -186,11 +206,25 @@ object RewardProbabilityCommand {
                                             return@executes 0
                                         }
                                         val (file, yaml) = loaded
-                                        if (!yaml.contains("prizes.$rewardId")) {
-                                            CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_REWARD, mapOf("reward" to rewardId))
-                                            return@executes 0
+                                        val state = RewardMutationSupport.fromYaml(yaml)
+                                        val mutation = RewardMutationSupport.setRewardTier(state, crate, rewardId, tierId)
+                                        when (mutation.error) {
+                                            RewardMutationSupport.Error.UNKNOWN_REWARD -> {
+                                                CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_REWARD, mapOf("reward" to rewardId))
+                                                return@executes 0
+                                            }
+                                            RewardMutationSupport.Error.INVALID_TIER -> {
+                                                CommandMessages.chat(context.source.sender, MessageKeys.COMMON_UNKNOWN_TIER, mapOf("tier" to tierId))
+                                                return@executes 0
+                                            }
+                                            RewardMutationSupport.Error.INVALID_MODE -> {
+                                                CommandMessages.chat(context.source.sender, MessageKeys.REWARD_TIER_ONLY)
+                                                return@executes 0
+                                            }
+                                            else -> Unit
                                         }
-                                        yaml.set("prizes.$rewardId.tier", tierId)
+                                        if (!mutation.success) return@executes 0
+                                        RewardMutationSupport.writeToYaml(state, yaml)
                                         val reloadResult = ProbabilityCommandSupport.saveAndReload(file, yaml)
                                         if (!reloadResult.success) {
                                             CommandMessages.raw(context.source.sender, "<red>${reloadResult.message ?: "Reload failed."}</red>")

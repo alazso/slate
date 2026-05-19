@@ -14,6 +14,11 @@ import org.bukkit.persistence.PersistentDataType
 import so.alaz.slate.SlateKeys
 import so.alaz.slate.api.SlateAPI
 import so.alaz.slate.command.SlatePermissions
+import so.alaz.slate.crate.KeyProvider
+import so.alaz.slate.item.ItemBuildRequest
+import so.alaz.slate.item.ItemFactory
+import so.alaz.slate.item.ItemOverlay
+import so.alaz.slate.item.ItemProviderRegistry
 import so.alaz.slate.key.PhysicalKeyUtil
 import so.alaz.slate.message.MessageKeys
 import so.alaz.slate.probability.ProbabilityVariableService
@@ -241,10 +246,20 @@ object DebugCommand {
                             return@executes 0
                         }
                         val plugins = listOf("PlaceholderAPI", "Nexo", "CraftEngine", "Oraxen", "ItemsAdder", "MMOItems")
-                        val states = plugins.joinToString(", ") { name ->
+                        val pluginStates = plugins.joinToString(", ") { name ->
                             val enabled = plugin.server.pluginManager.getPlugin(name)?.isEnabled == true
                             "$name=${if (enabled) "on" else "off"}"
                         }
+                        val providerStates = itemProviderStates()
+                        val probeStates = resolverProbeStates()
+                        val economyService = SlateAPI.economyService()
+                        val currencyProviders = economyService?.providers()
+                            ?.joinToString(", ") { "${it.id}=${if (it.isAvailable()) "ready" else "down"}" }
+                            .orEmpty()
+                            .ifBlank { "none" }
+                        val defaultProvider = SlateAPI.configManager()?.current?.currency?.defaultProvider ?: "n/a"
+                        val defaultCurrency = SlateAPI.configManager()?.current?.currency?.defaultCurrency ?: "n/a"
+                        val states = "plugins[$pluginStates] providers[$providerStates] probes[$probeStates] currency[$currencyProviders default=$defaultProvider/$defaultCurrency]"
                         CommandMessages.chat(sender, MessageKeys.DEBUG_INTEGRATIONS_SUMMARY, mapOf("states" to states))
                         Command.SINGLE_SUCCESS
                     },
@@ -444,5 +459,58 @@ object DebugCommand {
             }
         }
         return Command.SINGLE_SUCCESS
+    }
+
+    private fun itemProviderStates(): String {
+        val providers = listOf("vanilla", "nexo", "craftengine", "oraxen", "itemsadder", "mmoitems")
+        return providers.joinToString(", ") { providerId ->
+            val provider = ItemProviderRegistry.provider(providerId)
+            val state = when {
+                provider == null -> "missing"
+                provider.isAvailable() -> "ready"
+                else -> "unavailable"
+            }
+            "$providerId=$state"
+        }
+    }
+
+    private fun resolverProbeStates(): String {
+        val crateManager = SlateAPI.crateManager() ?: return "crate-manager=unavailable"
+        val crates = crateManager.all()
+        val keyTargets = crates.filter {
+            it.keyDefinition.provider != KeyProvider.Vanilla && !it.keyDefinition.providerItemId.isNullOrBlank()
+        }
+        val keyResolvable = keyTargets.count { crate ->
+            ItemFactory.canResolve(
+                ItemBuildRequest(
+                    provider = crate.keyDefinition.provider.providerId,
+                    material = crate.keyDefinition.material.name,
+                    itemId = crate.keyDefinition.providerItemId,
+                    amount = 1,
+                ),
+            )
+        }
+
+        val rewardTargets = crates
+            .flatMap { it.prizes }
+            .flatMap { it.items }
+            .filter { !it.serialized.isNullOrBlank() || !it.itemId.isNullOrBlank() || !it.adapter.isNullOrBlank() }
+        val rewardResolvable = rewardTargets.count { reward ->
+            ItemFactory.canResolve(
+                ItemBuildRequest(
+                    provider = reward.adapter,
+                    material = reward.material,
+                    itemId = reward.itemId,
+                    serialized = reward.serialized,
+                    amount = 1,
+                    overlay = ItemOverlay(
+                        customModelData = reward.customModelData,
+                        pdc = reward.pdc,
+                    ),
+                ),
+            )
+        }
+
+        return "keys=$keyResolvable/${keyTargets.size}, rewards=$rewardResolvable/${rewardTargets.size}"
     }
 }

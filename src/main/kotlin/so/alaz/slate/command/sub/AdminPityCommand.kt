@@ -35,23 +35,19 @@ object AdminPityCommand {
                                         }
                                         val storage = SlateAPI.storageService()
                                         val scope = SlateAPI.pluginScope()
-                                        val plugin = SlateAPI.plugin()
-                                        if (storage == null || scope == null || plugin == null) {
+                                        if (storage == null || scope == null) {
                                             CommandMessages.notInitialized(sender)
                                             return@executes 0
                                         }
                                         scope.launch {
                                             val count = storage.getPityCount(target.uniqueId, crate)
-                                            plugin.server.scheduler.runTask(
-                                                plugin,
-                                                Runnable {
-                                                    CommandMessages.chat(
-                                                        sender,
-                                                        MessageKeys.ADMIN_PITY_GET_RESULT,
-                                                        mapOf("player" to (target.name ?: playerName), "crate" to crate, "count" to count),
-                                                    )
-                                                },
-                                            )
+                                            CommandMessages.dispatchForSender(sender) {
+                                                CommandMessages.chat(
+                                                    sender,
+                                                    MessageKeys.ADMIN_PITY_GET_RESULT,
+                                                    mapOf("player" to (target.name ?: playerName), "crate" to crate, "count" to count),
+                                                )
+                                            }
                                         }
                                         Command.SINGLE_SUCCESS
                                     },
@@ -78,23 +74,19 @@ object AdminPityCommand {
                                         }
                                         val storage = SlateAPI.storageService()
                                         val scope = SlateAPI.pluginScope()
-                                        val plugin = SlateAPI.plugin()
-                                        if (storage == null || scope == null || plugin == null) {
+                                        if (storage == null || scope == null) {
                                             CommandMessages.notInitialized(sender)
                                             return@executes 0
                                         }
                                         scope.launch {
                                             storage.setPityCount(target.uniqueId, crate, 0)
-                                            plugin.server.scheduler.runTask(
-                                                plugin,
-                                                Runnable {
-                                                    CommandMessages.chat(
-                                                        sender,
-                                                        MessageKeys.ADMIN_PITY_RESET_RESULT,
-                                                        mapOf("player" to (target.name ?: playerName), "crate" to crate),
-                                                    )
-                                                },
-                                            )
+                                            CommandMessages.dispatchForSender(sender) {
+                                                CommandMessages.chat(
+                                                    sender,
+                                                    MessageKeys.ADMIN_PITY_RESET_RESULT,
+                                                    mapOf("player" to (target.name ?: playerName), "crate" to crate),
+                                                )
+                                            }
                                         }
                                         Command.SINGLE_SUCCESS
                                     },

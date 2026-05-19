@@ -52,6 +52,40 @@ object CommandSuggestions {
         return builder.buildFuture()
     }
 
+    fun suggestCurrencyIds(
+        @Suppress("UNUSED_PARAMETER") source: CommandSourceStack,
+        builder: SuggestionsBuilder,
+    ): CompletableFuture<Suggestions> {
+        val remaining = builder.remaining.lowercase()
+        SlateAPI.economyService()
+            ?.currencies("default")
+            .orEmpty()
+            .asSequence()
+            .map { it.id }
+            .distinct()
+            .sorted()
+            .filter { it.lowercase().startsWith(remaining) }
+            .forEach(builder::suggest)
+        return builder.buildFuture()
+    }
+
+    fun suggestCurrencyProviderIds(
+        @Suppress("UNUSED_PARAMETER") source: CommandSourceStack,
+        builder: SuggestionsBuilder,
+    ): CompletableFuture<Suggestions> {
+        val remaining = builder.remaining.lowercase()
+        SlateAPI.economyService()
+            ?.providers()
+            .orEmpty()
+            .asSequence()
+            .map { it.id }
+            .distinct()
+            .sorted()
+            .filter { it.lowercase().startsWith(remaining) }
+            .forEach(builder::suggest)
+        return builder.buildFuture()
+    }
+
     private fun suggestFlags(
         builder: SuggestionsBuilder,
         flags: List<String>,

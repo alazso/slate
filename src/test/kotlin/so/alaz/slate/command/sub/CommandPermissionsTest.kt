@@ -92,9 +92,11 @@ class CommandPermissionsTest {
         val create = root.getChild("create")
         val set = root.getChild("set")
         val addReward = root.getChild("addreward")
+        val editor = root.getChild("editor")
         assertNotNull(create)
         assertNotNull(set)
         assertNotNull(addReward)
+        assertNotNull(editor)
 
         assertTrue(create.requirement.test(sourceWith("slate.crate.create")))
         assertFalse(create.requirement.test(sourceWith()))
@@ -102,6 +104,9 @@ class CommandPermissionsTest {
         assertFalse(set.requirement.test(sourceWith()))
         assertTrue(addReward.requirement.test(sourceWith("slate.crate.addreward")))
         assertFalse(addReward.requirement.test(sourceWith()))
+        assertTrue(editor.requirement.test(sourceWith("slate.crate.editor")))
+        assertFalse(editor.requirement.test(sourceWith()))
+        assertNotNull(editor.getChild("crate"))
     }
 
     private fun sourceWith(vararg permissions: String): CommandSourceStack {

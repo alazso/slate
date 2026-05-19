@@ -6,12 +6,14 @@ import so.alaz.slate.command.sub.AuditCommand
 import so.alaz.slate.command.sub.BackupCommand
 import so.alaz.slate.command.sub.CratesCommand
 import so.alaz.slate.command.sub.CrateProbabilityCommand
+import so.alaz.slate.command.sub.CurrencyAdminCommand
 import so.alaz.slate.command.sub.DebugCommand
 import so.alaz.slate.command.sub.HealthCommand
 import so.alaz.slate.command.sub.HelpCommand
 import so.alaz.slate.command.sub.KeyCommand
 import so.alaz.slate.command.sub.MigrateCommand
 import so.alaz.slate.command.sub.PlayerKeysCommand
+import so.alaz.slate.command.sub.PlayerCurrencyCommand
 import so.alaz.slate.command.sub.ReloadCommand
 import so.alaz.slate.command.sub.RewardProbabilityCommand
 import so.alaz.slate.command.sub.RestoreCommand
@@ -19,6 +21,7 @@ import so.alaz.slate.command.sub.SessionCommand
 import so.alaz.slate.command.sub.TierProbabilityCommand
 import so.alaz.slate.command.sub.VersionCommand
 import so.alaz.slate.command.sub.AdminPityCommand
+import so.alaz.slate.command.sub.AdminEditorCommand
 
 object SlateCommands {
     fun register(commands: Commands) {
@@ -40,6 +43,8 @@ object SlateCommands {
                 .then(BackupCommand.node())
                 .then(RestoreCommand.node())
                 .then(AuditCommand.node())
+                .then(CurrencyAdminCommand.node())
+                .then(AdminEditorCommand.node())
                 .build(),
             "Slate admin commands",
             listOf("sla"),
@@ -54,6 +59,12 @@ object SlateCommands {
         commands.register(
             PlayerKeysCommand.node(),
             "Slate player key commands",
+            emptyList(),
+        )
+
+        commands.register(
+            PlayerCurrencyCommand.node(),
+            "Slate player currency command",
             emptyList(),
         )
     }

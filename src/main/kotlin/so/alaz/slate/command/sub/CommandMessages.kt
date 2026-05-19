@@ -1,6 +1,7 @@
 package so.alaz.slate.command.sub
 
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import so.alaz.slate.api.SlateAPI
 import so.alaz.slate.message.MessageKeys
 import so.alaz.slate.opening.FailureReason
@@ -50,4 +51,21 @@ internal object CommandMessages {
 
     fun openStoppedSuffix(failure: OpeningResult.Failure): String =
         OpenFailureMessages.stoppedSuffix(failure)
+
+    fun dispatchForSender(
+        sender: CommandSender,
+        block: () -> Unit,
+    ) {
+        val scheduler = SlateAPI.scheduler()
+        if (scheduler == null) {
+            block()
+            return
+        }
+        val player = sender as? Player
+        if (player != null) {
+            scheduler.runForPlayerEntity(player, block)
+            return
+        }
+        scheduler.runGlobal(block)
+    }
 }

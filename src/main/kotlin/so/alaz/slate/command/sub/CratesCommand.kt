@@ -95,57 +95,40 @@ object CratesCommand {
             .build()
 
     private fun locateNearest(player: Player) {
-        val anchorService = SlateAPI.anchorService()
+        val queryService = SlateAPI.playerCrateQueryService()
         val pluginScope = SlateAPI.pluginScope()
-        if (anchorService == null || pluginScope == null) {
+        if (queryService == null || pluginScope == null) {
             CommandMessages.notInitialized(player)
             return
         }
         pluginScope.launch {
-            val anchors = anchorService.allAnchors()
-            val nearest = anchors
-                .filter { it.worldKey == player.world.key.asString() }
-                .minByOrNull { anchor ->
-                    val dx = player.location.blockX - anchor.x
-                    val dy = player.location.blockY - anchor.y
-                    val dz = player.location.blockZ - anchor.z
-                    (dx * dx) + (dy * dy) + (dz * dz)
-                }
-            val text = if (nearest == null) {
-                null
-            } else {
-                nearest
-            }
+            val nearest = queryService.nearestAnchor(player)
             val plugin = SlateAPI.plugin()
             if (plugin != null) {
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable {
-                        if (text == null) {
-                            CommandMessages.chat(player, MessageKeys.CRATES_LOCATE_NONE)
-                        } else {
-                            CommandMessages.chat(
-                                player,
-                                MessageKeys.CRATES_LOCATE_NEAREST,
-                                mapOf("crate" to text.crateId, "x" to text.x, "y" to text.y, "z" to text.z),
-                            )
-                        }
-                    },
-                )
+                CommandMessages.dispatchForSender(player) {
+                    if (nearest == null) {
+                        CommandMessages.chat(player, MessageKeys.CRATES_LOCATE_NONE)
+                    } else {
+                        CommandMessages.chat(
+                            player,
+                            MessageKeys.CRATES_LOCATE_NEAREST,
+                            mapOf("crate" to nearest.crateId, "x" to nearest.x, "y" to nearest.y, "z" to nearest.z),
+                        )
+                    }
+                }
             }
         }
     }
 
     private fun history(player: Player, limit: Int, crateIdFilter: String? = null) {
-        val storage = SlateAPI.storageService()
+        val queryService = SlateAPI.playerCrateQueryService()
         val pluginScope = SlateAPI.pluginScope()
-        if (storage == null || pluginScope == null) {
+        if (queryService == null || pluginScope == null) {
             CommandMessages.notInitialized(player)
             return
         }
         pluginScope.launch {
-            val entries = storage.listOpenHistory(player.uniqueId, limit)
-                .filter { crateIdFilter == null || it.crateId == crateIdFilter }
+            val entries = queryService.openHistory(player, limit, crateIdFilter)
             val lines = if (entries.isEmpty()) {
                 emptyList()
             } else {
@@ -155,46 +138,37 @@ object CratesCommand {
             }
             val plugin = SlateAPI.plugin()
             if (plugin != null) {
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable {
-                        if (lines.isEmpty()) {
-                            CommandMessages.chat(player, MessageKeys.CRATES_HISTORY_EMPTY)
-                        } else {
-                            lines.forEach { CommandMessages.chat(player, MessageKeys.CRATES_HISTORY_LINE, it) }
-                        }
-                    },
-                )
+                CommandMessages.dispatchForSender(player) {
+                    if (lines.isEmpty()) {
+                        CommandMessages.chat(player, MessageKeys.CRATES_HISTORY_EMPTY)
+                    } else {
+                        lines.forEach { CommandMessages.chat(player, MessageKeys.CRATES_HISTORY_LINE, it) }
+                    }
+                }
             }
         }
     }
 
     private fun pity(player: Player, crateId: String?) {
-        val storage = SlateAPI.storageService()
-        val crateManager = SlateAPI.crateManager()
+        val queryService = SlateAPI.playerCrateQueryService()
         val pluginScope = SlateAPI.pluginScope()
-        if (storage == null || crateManager == null || pluginScope == null) {
+        if (queryService == null || pluginScope == null) {
             CommandMessages.notInitialized(player)
             return
         }
         pluginScope.launch {
-            val crateIds = if (crateId.isNullOrBlank()) crateManager.all().map { it.id }.sorted() else listOf(crateId)
-            val lines = crateIds.map { id ->
-                val count = storage.getPityCount(player.uniqueId, id)
-                mapOf("crate" to id, "count" to count)
-            }
+            val lines = queryService.pityProgress(player)
+                .filter { crateId.isNullOrBlank() || it.crate.id == crateId }
+                .map { entry -> mapOf("crate" to entry.crate.id, "count" to entry.current) }
             val plugin = SlateAPI.plugin()
             if (plugin != null) {
-                plugin.server.scheduler.runTask(
-                    plugin,
-                    Runnable {
-                        if (lines.isEmpty()) {
-                            CommandMessages.chat(player, MessageKeys.CRATES_PITY_EMPTY)
-                        } else {
-                            lines.forEach { CommandMessages.chat(player, MessageKeys.CRATES_PITY_LINE, it) }
-                        }
-                    },
-                )
+                CommandMessages.dispatchForSender(player) {
+                    if (lines.isEmpty()) {
+                        CommandMessages.chat(player, MessageKeys.CRATES_PITY_EMPTY)
+                    } else {
+                        lines.forEach { CommandMessages.chat(player, MessageKeys.CRATES_PITY_LINE, it) }
+                    }
+                }
             }
         }
     }
