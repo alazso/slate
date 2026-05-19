@@ -1,6 +1,7 @@
 package so.alaz.slate.opening
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,6 +22,7 @@ import so.alaz.slate.crate.CrateType
 import so.alaz.slate.crate.KeyDefinition
 import so.alaz.slate.crate.Prize
 import so.alaz.slate.key.KeyService
+import so.alaz.slate.key.KeyType
 import so.alaz.slate.storage.NoopClusterCoordinator
 
 class OpenServiceTest {
@@ -32,13 +34,16 @@ class OpenServiceTest {
         val service = OpenService(crateManager, keyService, openingPipeline, NoopClusterCoordinator)
         val player = mockk<Player>(relaxed = true)
         val crate = testCrate()
+        val playerId = UUID.randomUUID()
 
         val inFlight = AtomicInteger(0)
         val maxInFlight = AtomicInteger(0)
 
-        io.mockk.every { player.uniqueId } returns UUID.randomUUID()
+        io.mockk.every { player.uniqueId } returns playerId
         io.mockk.every { crateManager.byId(crate.id) } returns crate
-        coEvery { openingPipeline.execute(player, crate, any(), any()) } coAnswers {
+        coEvery { openingPipeline.isCooldownActive(playerId, crate, any()) } returns false
+        coEvery { openingPipeline.setCooldownNow(playerId, crate) } returns Unit
+        coEvery { openingPipeline.execute(player, crate, any(), any(), any(), any()) } coAnswers {
             val now = inFlight.incrementAndGet()
             maxInFlight.updateAndGet { current -> maxOf(current, now) }
             delay(50)
@@ -64,10 +69,13 @@ class OpenServiceTest {
         val player = mockk<Player>(relaxed = true)
         val crate = testCrate()
         val requestIds = mutableListOf<String>()
+        val playerId = UUID.randomUUID()
 
-        io.mockk.every { player.uniqueId } returns UUID.randomUUID()
+        io.mockk.every { player.uniqueId } returns playerId
         io.mockk.every { crateManager.byId(crate.id) } returns crate
-        coEvery { openingPipeline.execute(player, crate, any(), any()) } coAnswers {
+        coEvery { openingPipeline.isCooldownActive(playerId, crate, any()) } returns false
+        coEvery { openingPipeline.setCooldownNow(playerId, crate) } returns Unit
+        coEvery { openingPipeline.execute(player, crate, any(), any(), any(), any()) } coAnswers {
             requestIds += arg<String>(3)
             OpeningResult.Success("p1")
         }
@@ -78,6 +86,54 @@ class OpenServiceTest {
         assertEquals(4, requestIds.size)
         assertEquals(4, requestIds.toSet().size)
         assertNotEquals(commandBatchId(requestIds[0]), commandBatchId(requestIds[2]))
+        coVerify(exactly = 2) { openingPipeline.setCooldownNow(playerId, crate) }
+    }
+
+    @Test
+    fun `openById checks cooldown once and skips per-attempt cooldown writes`() = runTest {
+        val crateManager = mockk<CrateManager>()
+        val keyService = mockk<KeyService>()
+        val openingPipeline = mockk<OpeningPipeline>()
+        val service = OpenService(crateManager, keyService, openingPipeline, NoopClusterCoordinator)
+        val player = mockk<Player>(relaxed = true)
+        val crate = testCrate()
+        val playerId = UUID.randomUUID()
+
+        io.mockk.every { player.uniqueId } returns playerId
+        io.mockk.every { crateManager.byId(crate.id) } returns crate
+        coEvery { openingPipeline.isCooldownActive(playerId, crate, any()) } returns false
+        coEvery { openingPipeline.setCooldownNow(playerId, crate) } returns Unit
+        coEvery { openingPipeline.execute(player, crate, KeyType.Virtual, any(), false, false) } returns OpeningResult.Success("p1")
+
+        val result = service.openById(player, crate.id, 2)
+
+        assertTrue(result is OpenBatchResult.Executed && result.opened == 2)
+        coVerify(exactly = 1) { openingPipeline.isCooldownActive(playerId, crate, any()) }
+        coVerify(exactly = 2) { openingPipeline.execute(player, crate, KeyType.Virtual, any(), false, false) }
+        coVerify(exactly = 1) { openingPipeline.setCooldownNow(playerId, crate) }
+    }
+
+    @Test
+    fun `openById returns cooldown failure before any attempt when preflight blocked`() = runTest {
+        val crateManager = mockk<CrateManager>()
+        val keyService = mockk<KeyService>()
+        val openingPipeline = mockk<OpeningPipeline>()
+        val service = OpenService(crateManager, keyService, openingPipeline, NoopClusterCoordinator)
+        val player = mockk<Player>(relaxed = true)
+        val crate = testCrate()
+        val playerId = UUID.randomUUID()
+
+        io.mockk.every { player.uniqueId } returns playerId
+        io.mockk.every { crateManager.byId(crate.id) } returns crate
+        coEvery { openingPipeline.isCooldownActive(playerId, crate, any()) } returns true
+
+        val result = service.openById(player, crate.id, 2)
+        val executed = result as OpenBatchResult.Executed
+
+        assertEquals(0, executed.opened)
+        assertEquals(FailureReason.ON_COOLDOWN, executed.failedReason)
+        coVerify(exactly = 0) { openingPipeline.execute(any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { openingPipeline.setCooldownNow(any(), any()) }
     }
 
     private fun commandBatchId(requestId: String): String = requestId.split(":")[3]

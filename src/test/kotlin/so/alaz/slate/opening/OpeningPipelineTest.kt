@@ -23,6 +23,7 @@ import org.bukkit.inventory.PlayerInventory
 import org.bukkit.inventory.ItemStack
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import so.alaz.slate.crate.CrateDefinition
@@ -102,6 +103,13 @@ class OpeningPipelineTest {
                 override val isCancelled: Boolean = false
             }
         }
+        every { scheduler.runForPlayerEntity(any(), any()) } answers {
+            secondArg<() -> Unit>().invoke()
+            object : CancellableTask {
+                override fun cancel() {}
+                override val isCancelled: Boolean = false
+            }
+        }
         val crate = testCrate()
         coEvery { keyService.countKeys(player, crate, KeyType.Virtual) } returns 0
         coEvery { storage.getCooldown(any(), any()) } returns null
@@ -176,6 +184,55 @@ class OpeningPipelineTest {
         coVerify(exactly = 1) { storage.logOpen(playerId, crate.id, prize.id, prize.name, KeyType.Virtual) }
         coVerify(exactly = 1) { storage.setCooldown(playerId, crate.id, any()) }
         coVerify(exactly = 0) { storage.addPendingPrize(any(), any(), any()) }
+    }
+
+    @Test
+    fun `cooldown check can be skipped for batch follow-up attempts`() = runTest {
+        val keyService = mockk<KeyService>()
+        val prizeEngine = mockk<PrizeEngine>()
+        val pityTracker = mockk<PityTracker>()
+        val storage = mockk<StorageService>(relaxed = true)
+        val scheduler = immediateScheduler()
+        val crate = testCrate()
+        val prize = crate.prizes.single()
+
+        coEvery { storage.getCooldown(any(), any()) } returns Instant.now()
+        coEvery { storage.countOpens(any(), any()) } returns 0
+        coEvery { keyService.countKeys(player, crate, KeyType.Virtual) } returns crate.requiredKeys
+        coEvery { keyService.consumeKey(player, crate, KeyType.Virtual) } returns true
+        coEvery { pityTracker.increment(any(), any()) } returns 1
+        coEvery { prizeEngine.selectPrize(crate, null, 1) } returns prize
+        stubCreatedOperation(storage, player.uniqueId, crate.id, KeyType.Virtual)
+
+        val pipeline = OpeningPipeline(keyService, prizeEngine, pityTracker, storage, scheduler, CrateEligibilityService())
+        val result = pipeline.execute(player, crate, KeyType.Virtual, checkCooldown = false)
+
+        assertEquals(OpeningResult.Success(prize.id), result)
+    }
+
+    @Test
+    fun `cooldown write can be disabled for batch-managed command opens`() = runTest {
+        val keyService = mockk<KeyService>()
+        val prizeEngine = mockk<PrizeEngine>()
+        val pityTracker = mockk<PityTracker>()
+        val storage = mockk<StorageService>(relaxed = true)
+        val scheduler = immediateScheduler()
+        val crate = testCrate()
+        val prize = crate.prizes.single()
+
+        coEvery { storage.getCooldown(any(), any()) } returns null
+        coEvery { storage.countOpens(any(), any()) } returns 0
+        coEvery { keyService.countKeys(player, crate, KeyType.Virtual) } returns crate.requiredKeys
+        coEvery { keyService.consumeKey(player, crate, KeyType.Virtual) } returns true
+        coEvery { pityTracker.increment(any(), any()) } returns 1
+        coEvery { prizeEngine.selectPrize(crate, null, 1) } returns prize
+        coEvery { storage.setCooldown(any(), any(), any()) } throws AssertionError("setCooldown should not be called when writeCooldown=false")
+        stubCreatedOperation(storage, player.uniqueId, crate.id, KeyType.Virtual)
+
+        val pipeline = OpeningPipeline(keyService, prizeEngine, pityTracker, storage, scheduler, CrateEligibilityService())
+        val result = pipeline.execute(player, crate, KeyType.Virtual, writeCooldown = false)
+
+        assertTrue(result is OpeningResult.Success)
     }
 
     @Test
@@ -355,6 +412,13 @@ class OpeningPipelineTest {
         val scheduler = mockk<PlatformScheduler>()
         every { scheduler.runGlobal(any()) } answers {
             firstArg<() -> Unit>().invoke()
+            object : CancellableTask {
+                override fun cancel() {}
+                override val isCancelled: Boolean = false
+            }
+        }
+        every { scheduler.runForPlayerEntity(any(), any()) } answers {
+            secondArg<() -> Unit>().invoke()
             object : CancellableTask {
                 override fun cancel() {}
                 override val isCancelled: Boolean = false
